@@ -3,10 +3,6 @@
 PROJECT="game-gorl"
 BUILD_PATH="./build"
 
-init:
-	mkdir build
-	mkdir runtime
-
 build-win:
 	CGO_LDFLAGS="-static-libgcc -static -lpthread"\
 				GOOS=windows GOARCH=amd64 CGO_ENABLED=1\

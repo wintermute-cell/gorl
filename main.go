@@ -87,7 +87,6 @@ func main() {
 	// scenes
 	scenes.Sm.RegisterScene("dev", &scenes.DevScene{})
 	scenes.Sm.RegisterScene("dev_menu", &scenes.DevMenuScene{})
-	scenes.Sm.RegisterScene("gameover_menu", &scenes.GameoverMenuScene{})
 
 	scenes.Sm.EnableScene("dev_menu")
 
@@ -102,7 +101,7 @@ func main() {
 
 		// begin drawing the world
 		render.BeginCustomRenderWorldspace()
-		rl.ClearBackground(rl.DarkGreen) // clear the main rendertex
+		rl.ClearBackground(rl.Gray) // clear the main rendertex
 
 		// Draw all registered Scenes
 		gem.UpdateEntities()
