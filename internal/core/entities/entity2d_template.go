@@ -1,8 +1,8 @@
 package entities
 
 import (
-	"gorl/internal/entities/proto"
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"gorl/internal/core/entities/proto"
 )
 
 // Template Entity

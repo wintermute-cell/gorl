@@ -10,10 +10,9 @@ var _ Entity = (*BaseEntity)(nil)
 // Base Entity
 type BaseEntity struct {
 	// Required fields
-	entity_manager *EntityManager
-	children       []Entity
-	parent         Entity
-    Name string
+	children []Entity
+	parent   Entity
+	Name     string
 
 	// Custom Fields
 	// Add fields here for any state that the entity should keep track of
@@ -21,25 +20,16 @@ type BaseEntity struct {
 }
 
 func (ent *BaseEntity) Init() {
-	// Required initialization
-	ent.entity_manager = NewEntityManager()
-
 	// Initialization logic for the entity
 	// ...
 }
 
 func (ent *BaseEntity) Deinit() {
-	// Required de-initialization
-	ent.entity_manager.DisableAllEntities()
-
 	// De-initialization logic for the entity
 	// ...
 }
 
 func (ent *BaseEntity) Update() {
-	// Required update
-	ent.entity_manager.UpdateEntities()
-
 	// Update logic for the entity
 	// ...
 }
@@ -93,8 +83,8 @@ func (ent *BaseEntity) GetDrawIndex() int32 {
 }
 
 func (ent *BaseEntity) GetName() string {
-    if ent.Name == "" {
-        ent.Name = "UnnamedEntity"
-    }
-    return ent.Name
+	if ent.Name == "" {
+		ent.Name = "UnnamedEntity"
+	}
+	return ent.Name
 }

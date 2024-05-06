@@ -10,10 +10,10 @@ type GameSettings struct {
 	Version string `json:"version"` // 0.0.0
 	Title   string `json:"title"`   // made with gorl
 	// Display
-	ScreenWidth     int  `json:"screenWidth"`     // 512
-	ScreenHeight    int  `json:"screenHeight"`    // 744
-	RenderWidth     int  `json:"renderWidth"`     // 128
-	RenderHeight    int  `json:"renderHeight"`    // 186
+	ScreenWidth     int  `json:"screenWidth"`     // 960
+	ScreenHeight    int  `json:"screenHeight"`    // 540
+	RenderWidth     int  `json:"renderWidth"`     // 960
+	RenderHeight    int  `json:"renderHeight"`    // 540
 	TargetFps       int  `json:"targetFps"`       // 144
 	Fullscreen      bool `json:"fullscreen"`      // false
 	EnableCrtEffect bool `json:"enableCrtEffect"` // true
@@ -38,19 +38,19 @@ func CurrentSettings() *GameSettings {
 
 func UseFallbackSettings() {
 	settings = &GameSettings{
-		Version:          "0.0.0",
-		Title:            "made with gorl",
-		ScreenWidth:      512,
-		ScreenHeight:     744,
-		RenderWidth:      128,
-		RenderHeight:     186,
-		TargetFps:        144,
-		Fullscreen:       false,
+		Version:  "0.0.0",
+		Title:  "made with gorl",
+		ScreenWidth:  960,
+		ScreenHeight:  540,
+		RenderWidth:  960,
+		RenderHeight:  540,
+		TargetFps:  144,
+		Fullscreen:  false,
 		EnableCrtEffect:  true,
-		MouseSensitivity: 1.0,
-		SoundVolume:      0.5,
-		LogPath:          "logs/",
-		EnableGamepad:    false,
+		MouseSensitivity:  1.0,
+		SoundVolume:  0.5,
+		LogPath:  "logs/",
+		EnableGamepad:  false,
 	}
 }
 

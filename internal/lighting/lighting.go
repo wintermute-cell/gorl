@@ -1,8 +1,8 @@
 package lighting
 
 import (
+	"gorl/internal/core/render"
 	"gorl/internal/logging"
-	"gorl/internal/render"
 	"gorl/internal/util"
 
 	rl "github.com/gen2brain/raylib-go/raylib"

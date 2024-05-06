@@ -11,8 +11,7 @@ var _ Entity2D = (*BaseEntity2D)(nil)
 type BaseEntity2D struct {
 	// Required fields
 	BaseEntity
-	entity_manager *EntityManager
-	Transform      Transform2D
+	Transform Transform2D
 
 	// Custom Fields
 	// Add fields here for any state that the entity should keep track of

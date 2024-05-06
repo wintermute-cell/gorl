@@ -1,24 +1,30 @@
 package gem
 
 import (
-	"gorl/internal/entities/proto"
-	"gorl/internal/physics"
+	"gorl/internal/core/entities/proto"
 	"gorl/internal/util"
 	"sort"
 	"strings"
 )
 
 type GlobalEntityManager struct {
-	root proto.Entity
-    fixed_update_timer util.Timer
+	root               proto.Entity
+	fixedUpdateTimer   util.Timer
+	fixedUpdateEnabled bool
 }
 
 var Gem *GlobalEntityManager
 
-func InitGem() {
-    rootEntity := &proto.BaseEntity{Name: "GemRoot"}
+// InitGem initializes the global entity manager with the given physics delta
+// time. If the physics delta time is 0, fixed update is disabled.
+func InitGem(physicsDeltatimeSeconds float32) {
+	rootEntity := &proto.BaseEntity{Name: "GemRoot"}
 	rootEntity.Init()
-    Gem = &GlobalEntityManager{root: rootEntity, fixed_update_timer: *util.NewTimer(physics.GetTimestep())}
+	Gem = &GlobalEntityManager{
+		root:               rootEntity,
+		fixedUpdateTimer:   *util.NewTimer(physicsDeltatimeSeconds),
+		fixedUpdateEnabled: physicsDeltatimeSeconds > 0.0,
+	}
 }
 
 // AddEntity adds a child to the root entity and initializes it. The child is
@@ -26,50 +32,50 @@ func InitGem() {
 func AddEntity(parent proto.Entity, child proto.Entity) proto.Entity {
 	parent.AddChild(child)
 	child.SetParent(parent)
-    print_tree(Gem.root, 0, false)
+	print_tree(Gem.root, 0, false)
 	child.Init()
 	return child
 }
 
 func print_tree(entity proto.Entity, depth int32, last bool) {
-    prefix := strings.Repeat("   ", int(depth))
-    if depth > 0 {
-        if last {
-            prefix += "└─ "
-        } else {
-            prefix += "├─ "
-        }
-    }
-    
-    children := entity.GetChildren()
-    for i, child := range children {
-        isLast := i == len(children)-1
-        print_tree(child, depth+1, isLast)
-    }
+	prefix := strings.Repeat("   ", int(depth))
+	if depth > 0 {
+		if last {
+			prefix += "└─ "
+		} else {
+			prefix += "├─ "
+		}
+	}
+
+	children := entity.GetChildren()
+	for i, child := range children {
+		isLast := i == len(children)-1
+		print_tree(child, depth+1, isLast)
+	}
 }
 
 func RemoveEntity(entity proto.Entity) {
-    // this function is weird. try to not touch it.
-    // Slices seem to behave weirdly in Go. When a slice is returned, it is not
-    // a copy, but rather a reference, since the returned slice shares the same
-    // underlying array.
-    children := make([]proto.Entity, len(entity.GetChildren()))
-    copy(children, entity.GetChildren()) // gets entity.children (slice of pointers)
+	// this function is weird. try to not touch it.
+	// Slices seem to behave weirdly in Go. When a slice is returned, it is not
+	// a copy, but rather a reference, since the returned slice shares the same
+	// underlying array.
+	children := make([]proto.Entity, len(entity.GetChildren()))
+	copy(children, entity.GetChildren()) // gets entity.children (slice of pointers)
 	for _, child := range children {
 		RemoveEntity(child)
 	}
-    if entity.GetParent() != nil {
-        entity.GetParent().RemoveChild(entity) // removes itself from parent.children
-    }
+	if entity.GetParent() != nil {
+		entity.GetParent().RemoveChild(entity) // removes itself from parent.children
+	}
 	entity.Deinit()
 }
 
 func UpdateEntities() {
-    if Gem.fixed_update_timer.Check() {
-        updateEntity(Gem.root, true)
-    } else {
-        updateEntity(Gem.root, false)
-    }
+	if Gem.fixedUpdateEnabled && Gem.fixedUpdateTimer.Check() {
+		updateEntity(Gem.root, true)
+	} else {
+		updateEntity(Gem.root, false)
+	}
 }
 
 func DrawEntities() {
@@ -81,9 +87,9 @@ func DrawEntitiesGUI() {
 }
 
 func updateEntity(entity proto.Entity, with_fixed_update bool) {
-    if with_fixed_update {
-        entity.FixedUpdate()
-    }
+	if with_fixed_update {
+		entity.FixedUpdate()
+	}
 	entity.Update()
 	for _, child := range entity.GetChildren() {
 		updateEntity(child, with_fixed_update)
@@ -132,11 +138,11 @@ func draw_entities_flattened(root proto.Entity, draw_gui bool) {
 
 	// Draw in sorted order
 	for _, fe := range flattened_entities {
-        if draw_gui {
-            fe.Entity.DrawGUI()
-        } else {
-            fe.Entity.Draw()
-        }
+		if draw_gui {
+			fe.Entity.DrawGUI()
+		} else {
+			fe.Entity.Draw()
+		}
 	}
 }
 
