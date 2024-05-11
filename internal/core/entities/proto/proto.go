@@ -6,20 +6,30 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-// Entity is an interface that every entity in the game should implement
-type Entity interface {
+// IEntity is an interface that every entity in the game should implement
+type IEntity interface {
 	Init()
 	Deinit()
 	Update()
-	FixedUpdate()
+	FixedUpdate() // only called when phyics enabled
 	Draw()
+
+	// new
+
+	// OnChildAdded is called every time an entity is added to the Gem with this Entity as the parent.
+	OnChildAdded(child IEntity)
+	// OnChildRemoved is called every time a child of this entity is removed from the Gem.
+	OnChildRemoved(child IEntity)
+
+	// old
 	DrawGUI()
-	AddChild(child Entity)
-	RemoveChild(child Entity)
-	GetChildren() []Entity
-	GetParent() Entity
-	SetParent(parent Entity)
+	AddChild(child IEntity)
+	RemoveChild(child IEntity)
+	GetChildren() []IEntity
+	GetParent() IEntity
+	SetParent(parent IEntity)
 	GetDrawIndex() int32
+	SetDrawIndex(index int32)
 	GetName() string
 }
 
@@ -42,8 +52,8 @@ func BaseTransform2D() Transform2D {
 	}
 }
 
-type Entity2D interface {
-	Entity
+type IEntity2D interface {
+	IEntity
 	GetPosition() rl.Vector2
 	SetPosition(new_position rl.Vector2)
 	GetScale() rl.Vector2
@@ -52,8 +62,8 @@ type Entity2D interface {
 }
 
 type Entity2DPlayer interface {
-	Entity2D
-	SendMessage(message string, sender Entity)
+	IEntity2D
+	SendMessage(message string, sender IEntity)
 }
 
 // -------------------
@@ -62,6 +72,6 @@ type Entity2DPlayer interface {
 //
 // -------------------
 type Entity2DAI interface {
-	Entity2D
+	IEntity2D
 	ai.AiControllable
 }

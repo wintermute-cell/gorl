@@ -10,5 +10,4 @@
 
 # To document
 - Settings -> how do they work, how do you use them, how to set defaults, how to use scripts/sync_settings.py
-- Renderer
-    - What is a render system, what are render stages, how to use it all
+- The Gem -> how/why are entities stored? how to interface with the Gem? what is fast, what is slow? why are scenes an optional feature?

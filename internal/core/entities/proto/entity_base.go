@@ -5,56 +5,71 @@ import (
 )
 
 // This checks at compile time if the interface is implemented
-var _ Entity = (*BaseEntity)(nil)
+var _ IEntity = (*Entity)(nil)
 
 // Base Entity
-type BaseEntity struct {
+type Entity struct {
 	// Required fields
-	children []Entity
-	parent   Entity
-	Name     string
+	children  []IEntity
+	parent    IEntity
+	drawIndex int32
+	Name      string
 
 	// Custom Fields
 	// Add fields here for any state that the entity should keep track of
 	// ...
 }
 
-func (ent *BaseEntity) Init() {
+func (ent *Entity) String() string {
+	return ent.Name
+}
+
+func (ent *Entity) Init() {
 	// Initialization logic for the entity
 	// ...
 }
 
-func (ent *BaseEntity) Deinit() {
+func (ent *Entity) Deinit() {
 	// De-initialization logic for the entity
 	// ...
 }
 
-func (ent *BaseEntity) Update() {
+func (ent *Entity) Update() {
 	// Update logic for the entity
 	// ...
 }
 
-func (ent *BaseEntity) FixedUpdate() {
+func (ent *Entity) FixedUpdate() {
 
 }
 
-func (ent *BaseEntity) Draw() {
+func (ent *Entity) Draw() {
 	// Draw logic for the entity
 	// ...
 }
 
-func (ent *BaseEntity) DrawGUI() {
+func (ent *Entity) DrawGUI() {
 	// GUI Draw logic for the entity
 	// ...
 }
 
+func (ent *Entity) OnChildAdded(child IEntity) {
+	// Logic to run when a child is added to this entity
+	// ...
+}
+
+func (ent *Entity) OnChildRemoved(child IEntity) {
+	// Logic to run when a child is removed from this entity
+	// ...
+}
+
 // AddChild adds a child to this entity.
-func (ent *BaseEntity) AddChild(child Entity) {
+func (ent *Entity) AddChild(child IEntity) {
 	ent.children = append(ent.children, child)
 }
 
 // RemoveChild removes a child from this entity.
-func (ent *BaseEntity) RemoveChild(child Entity) {
+func (ent *Entity) RemoveChild(child IEntity) {
 	idx := util.SliceIndex(ent.children, child)
 	if idx > -1 {
 		ent.children = util.SliceDelete(ent.children, idx, idx+1)
@@ -62,27 +77,33 @@ func (ent *BaseEntity) RemoveChild(child Entity) {
 }
 
 // GetChildren returns the children of this entity.
-func (ent *BaseEntity) GetChildren() []Entity {
+func (ent *Entity) GetChildren() []IEntity {
 	return ent.children
 }
 
 // GetParent sets the parent of this entity.
-func (ent *BaseEntity) GetParent() Entity {
+func (ent *Entity) GetParent() IEntity {
 	return ent.parent
 }
 
 // SetParent sets the parent of this entity.
-func (ent *BaseEntity) SetParent(parent Entity) {
+func (ent *Entity) SetParent(parent IEntity) {
 	ent.parent = parent
 }
 
 // GetDrawIndex returns the draw index of this entity. Entities with a higher
 // index are drawn in front of entities with a lower index.
-func (ent *BaseEntity) GetDrawIndex() int32 {
-	return 0
+func (ent *Entity) GetDrawIndex() int32 {
+	return ent.drawIndex
 }
 
-func (ent *BaseEntity) GetName() string {
+// SetDrawIndex sets the draw index of this entity. Entities with a higher
+// index are drawn in front of entities with a lower index.
+func (ent *Entity) SetDrawIndex(index int32) {
+	ent.drawIndex = index
+}
+
+func (ent *Entity) GetName() string {
 	if ent.Name == "" {
 		ent.Name = "UnnamedEntity"
 	}

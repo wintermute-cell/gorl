@@ -6,7 +6,8 @@ import (
 	//"gorl/internal/physics"
 
 	//"gorl/internal/collision"
-	"gorl/internal/core/entities/gem"
+	"gorl/internal/core/gem"
+	//"gorl/pkg/entities"
 	//"gorl/internal/gui"
 
 	//"gorl/internal/lighting"
@@ -15,18 +16,13 @@ import (
 	"gorl/internal/core/render"
 	"gorl/internal/modules/scenes"
 	"gorl/internal/settings"
+	uscenes "gorl/pkg/scenes"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func main() {
 	// PRE-INIT
-
-	// TODO: impl this
-	//now := time.Now()
-	//i := messages.ImplementsInterfaceGeneric[MyInterface](&MyStruct{})
-	//fmt.Println(i) // should
-	//fmt.Println("Time taken:", time.Since(now))
 
 	// settings
 	settings_path := "settings.json"
@@ -60,18 +56,16 @@ func main() {
 		float32(settings.CurrentSettings().ScreenWidth),
 		float32(settings.CurrentSettings().ScreenHeight)))
 
+	renderRatio := float32(settings.CurrentSettings().RenderWidth) / float32(settings.CurrentSettings().ScreenWidth)
 	// renders at default resolution
 	defaultRenderStage := render.NewRenderStage(rl.NewVector2(
 		float32(settings.CurrentSettings().RenderWidth),
-		float32(settings.CurrentSettings().RenderHeight)), 1)
+		float32(settings.CurrentSettings().RenderHeight)), renderRatio)
 
 	// renders at double resolution
-	doubleResRenderStage := render.NewRenderStage(rl.NewVector2(
-		float32(settings.CurrentSettings().RenderWidth*2),
-		float32(settings.CurrentSettings().RenderHeight*2)), 2)
-	doubleResRenderStage.SetCameraOffset(rl.NewVector2(
-		float32(settings.CurrentSettings().RenderWidth/2),
-		float32(settings.CurrentSettings().RenderHeight/2)))
+	//doubleResRenderStage := render.NewRenderStage(rl.NewVector2(
+	//	float32(settings.CurrentSettings().RenderWidth*2),
+	//	float32(settings.CurrentSettings().RenderHeight*2)), 2)
 
 	logging.Info("Custom rendering initialized.")
 
@@ -88,7 +82,9 @@ func main() {
 	//defer physics.DeinitPhysics()
 
 	//gem.InitGem(physics.GetTimestep())
-	gem.InitGem(0)
+	//gem.InitGem(0)
+	gem.Init()
+	defer gem.Deinit()
 
 	// lighting
 	//lighting.InitLighting()
@@ -114,8 +110,11 @@ func main() {
 
 	// scenes
 	//scenes.Sm.RegisterScene("dev", &scenes.DevScene{})
-
 	//scenes.Sm.EnableScene("dev")
+
+	scenes.RegisterScene("some_name", &uscenes.TemplateScene{})
+	scenes.EnableScene("some_name")
+	scenes.DisableScene("some_name")
 
 	//rl.DisableCursor()
 
@@ -126,49 +125,25 @@ func main() {
 		//animation.UpdatePremades()
 		//render.UpdateEffects()
 
+		scenes.UpdateScenes()
+		// scenes.FixedUpdateScenes()
+
 		rl.BeginDrawing()
 
 		// begin drawing the world
 		//render.BeginCustomRenderWorldspace()
 
-		if rl.IsKeyDown(rl.KeyJ) {
-			curretCameraTarget := doubleResRenderStage.GetCameraTarget()
-			doubleResRenderStage.SetCameraTarget(rl.Vector2Add(curretCameraTarget, rl.NewVector2(0, 10)))
-		}
-
-		if rl.IsKeyDown(rl.KeyK) {
-			curretCameraTarget := doubleResRenderStage.GetCameraTarget()
-			doubleResRenderStage.SetCameraTarget(rl.Vector2Add(curretCameraTarget, rl.NewVector2(0, -10)))
-		}
-
-		if rl.IsKeyDown(rl.KeyH) {
-			curretCameraTarget := doubleResRenderStage.GetCameraTarget()
-			doubleResRenderStage.SetCameraTarget(rl.Vector2Add(curretCameraTarget, rl.NewVector2(-10, 0)))
-		}
-
-		if rl.IsKeyDown(rl.KeyL) {
-			curretCameraTarget := doubleResRenderStage.GetCameraTarget()
-			doubleResRenderStage.SetCameraTarget(rl.Vector2Add(curretCameraTarget, rl.NewVector2(10, 0)))
-		}
-
 		rl.ClearBackground(rl.RayWhite)
 
 		renderSystem.EnableRenderStage(defaultRenderStage)
 		rl.ClearBackground(rl.Blank)
-		rl.DrawCircleV(rl.NewVector2(100, 100), 50, rl.Red)
 
-		renderSystem.EnableRenderStage(doubleResRenderStage)
-		rl.ClearBackground(rl.Blank)
-		// mark each corner with a circle
-		rl.DrawCircleV(rl.NewVector2(0, 0), 50, rl.Green)
-		rl.DrawCircleV(rl.NewVector2(0, float32(settings.CurrentSettings().RenderHeight)), 50, rl.Green)
-		rl.DrawCircleV(rl.NewVector2(float32(settings.CurrentSettings().RenderWidth), 0), 50, rl.Green)
-		rl.DrawCircleV(rl.NewVector2(float32(settings.CurrentSettings().RenderWidth), float32(settings.CurrentSettings().RenderHeight)), 50, rl.Green)
-		// and the center
-		rl.DrawCircleV(rl.NewVector2(float32(settings.CurrentSettings().RenderWidth/2), float32(settings.CurrentSettings().RenderHeight/2)), 50, rl.Blue)
+		gem.Draw(gem.GetByLayer(gem.DefaultLayer))
 
-		// and at the camera target
-		rl.DrawCircleV(doubleResRenderStage.GetCameraTarget(), 50, rl.Purple)
+		//renderSystem.EnableRenderStage(doubleResRenderStage)
+		//rl.ClearBackground(rl.Blank)
+
+		//gem.Draw(gem.GetByLayer(gem.DefaultLayer + 1))
 
 		renderSystem.FlushRenderStage()
 		renderSystem.RenderToScreen()
@@ -199,16 +174,16 @@ func main() {
 		//mousecursor.Draw()
 
 		// Draw Debug Info
-		rl.DrawFPS(10, 10)
-		render.DebugDrawStageViewports(
-			rl.NewVector2(10, 10), 4, renderSystem,
-			[]*render.RenderStage{defaultRenderStage, doubleResRenderStage},
-		)
+		//rl.DrawFPS(10, 10)
+		//render.DebugDrawStageViewports(
+		//	rl.NewVector2(10, 10), 4, renderSystem,
+		//	[]*render.RenderStage{defaultRenderStage, doubleResRenderStage},
+		//)
 
 		rl.EndDrawing()
 
 		//audio.Update()
-		shouldExit = rl.WindowShouldClose() || scenes.Sm.ShouldExit()
+		shouldExit = rl.WindowShouldClose() // || scenes.Sm.ShouldExit()
 	}
 
 	//scenes.Sm.DisableAllScenes()
