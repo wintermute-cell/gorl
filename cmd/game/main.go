@@ -2,27 +2,32 @@ package main
 
 import (
 	"fmt"
-	//"gorl/internal/audio"
-	//"gorl/internal/physics"
+	"time"
 
-	//"gorl/internal/collision"
-	"gorl/internal/core/gem"
-	//"gorl/pkg/entities"
-	//"gorl/internal/gui"
-
-	//"gorl/internal/lighting"
-	"gorl/internal/logging"
-	//"gorl/internal/physics"
-	"gorl/internal/core/render"
-	"gorl/internal/modules/scenes"
-	"gorl/internal/settings"
-	uscenes "gorl/pkg/scenes"
+	"gorl/fw/core/entities/proto"
+	"gorl/fw/core/gem"
+	input "gorl/fw/core/input/input_handling"
+	"gorl/fw/core/logging"
+	"gorl/fw/core/render"
+	"gorl/fw/core/settings"
+	"gorl/fw/modules/scenes"
+	"gorl/game"
+	"gorl/game/entities"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 func main() {
 	// PRE-INIT
+	go func() {
+		err := http.ListenAndServe("localhost:6969", nil)
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	// settings
 	settings_path := "settings.json"
@@ -52,7 +57,7 @@ func main() {
 	rl.SetTargetFPS(int32(settings.CurrentSettings().TargetFps))
 
 	// rendering
-	renderSystem := render.NewRenderSystem(rl.NewVector2(
+	render.Init(rl.NewVector2(
 		float32(settings.CurrentSettings().ScreenWidth),
 		float32(settings.CurrentSettings().ScreenHeight)))
 
@@ -112,48 +117,58 @@ func main() {
 	//scenes.Sm.RegisterScene("dev", &scenes.DevScene{})
 	//scenes.Sm.EnableScene("dev")
 
-	scenes.RegisterScene("some_name", &uscenes.TemplateScene{})
-	scenes.EnableScene("some_name")
-	scenes.DisableScene("some_name")
+	//scenes.RegisterScene("some_name", &uscenes.TemplateScene{})
+	//scenes.EnableScene("some_name")
+	//scenes.DisableScene("some_name")
 
 	//rl.DisableCursor()
+	game.Init()
 
 	// GAME LOOP
 	//rl.SetExitKey(rl.KeyEnd) // Set a key to exit the game
 	shouldExit := false
+
+	// frame time measurement stuff
+	now := time.Now()
+	var avgTime time.Duration
+
+	button1 := entities.NewButtonEntity2D(rl.NewVector2(100, 100), 0, rl.NewVector2(1, 1))
+	button1.Name = "Button 1"
+	button2 := entities.NewButtonEntity2D(rl.NewVector2(500, 100), 0, rl.NewVector2(1, 1))
+	button2.Name = "Button 2"
+	gem.AddEntity(gem.GetRoot(), button1, gem.DefaultLayer)
+	gem.AddEntity(gem.GetRoot(), button2, gem.DefaultLayer)
+
+	// keeps a list of entities in draw order, so we can pass input event in the correct order.
+	orderedEntities := [][]proto.IEntity{}
 	for !shouldExit {
+		now = time.Now()
+
+		orderedEntities = [][]proto.IEntity{}
+
 		//animation.UpdatePremades()
 		//render.UpdateEffects()
 
+		game.Update()
 		scenes.UpdateScenes()
 		// scenes.FixedUpdateScenes()
 
 		rl.BeginDrawing()
 
-		// begin drawing the world
-		//render.BeginCustomRenderWorldspace()
-
 		rl.ClearBackground(rl.RayWhite)
 
-		renderSystem.EnableRenderStage(defaultRenderStage)
+		render.EnableRenderStage(defaultRenderStage)
 		rl.ClearBackground(rl.Blank)
 
-		gem.Draw(gem.GetByLayer(gem.DefaultLayer))
+		orderedEntities = append(orderedEntities, gem.DrawLayer(gem.DefaultLayer))
 
-		//renderSystem.EnableRenderStage(doubleResRenderStage)
+		//render.EnableRenderStage(doubleResRenderStage)
 		//rl.ClearBackground(rl.Blank)
-
 		//gem.Draw(gem.GetByLayer(gem.DefaultLayer + 1))
 
-		renderSystem.FlushRenderStage()
-		renderSystem.RenderToScreen()
+		render.FlushRenderStage()
+		render.RenderToScreen()
 
-		//rl.DrawCircleV(rl.NewVector2(100, 300), 50, rl.Blue)
-
-		// Draw all registered Scenes
-		//gem.UpdateEntities()
-		//gem.DrawEntities()
-		//scenes.Sm.DrawScenes()
 		//collision.Update()
 		//physics.Update()
 
@@ -173,19 +188,35 @@ func main() {
 		//render.EndCustomRender()
 		//mousecursor.Draw()
 
+		// input is processed at the end of the frame, because here we know in
+		// what order the entities were drawn, and can be sure whatever the
+		// user clicked was really visible at the front.
+		input.HandleInputEvents(orderedEntities)
+
 		// Draw Debug Info
-		//rl.DrawFPS(10, 10)
+		rl.DrawFPS(10, 10)
+		rl.DrawText("dt: "+avgTime.String(), 10, 30, 20, rl.Lime)
 		//render.DebugDrawStageViewports(
-		//	rl.NewVector2(10, 10), 4, renderSystem,
-		//	[]*render.RenderStage{defaultRenderStage, doubleResRenderStage},
+		//	rl.NewVector2(10, 10), 4, render,
+		//	[]*render.RenderStage{defaultRenderStage},
 		//)
+		//gem.DebugDrawEntities(rl.NewVector2(10, 50), 12)
+		gem.DebugDrawHierarchy(rl.NewVector2(10, 50), 8)
 
 		rl.EndDrawing()
 
 		//audio.Update()
 		shouldExit = rl.WindowShouldClose() // || scenes.Sm.ShouldExit()
+
+		// calculate the time it took to render the frame.
+		// we must do this after the frame is drawn.
+		if avgTime == 0 {
+			avgTime = time.Since(now)
+		} else {
+			avgTime = (avgTime + time.Since(now)) / 2
+		}
+
 	}
 
 	//scenes.Sm.DisableAllScenes()
-	//gem.RemoveEntity(gem.Root())
 }

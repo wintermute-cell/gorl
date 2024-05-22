@@ -1,7 +1,7 @@
 # TODO
+- !!! document input code, document hierachical transforms
+
 - make a sample implementation of the ai module, remove the ai enemy grunt file afterwards.
-- introduce something like input consumption
-- scene root entity is pretty clunky, maybe have a built in entity for every scene
 - clean up utils
 - figure out how to do depth sorting / draw sorting
     - figure out how to determine what objects are rendered for what render stage

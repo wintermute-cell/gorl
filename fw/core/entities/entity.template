@@ -1,0 +1,53 @@
+package entities
+
+import (
+	"gorl/fw/core/entities/proto"
+	input "gorl/fw/core/input/input_event"
+)
+
+// Template Entity
+type TemplateEntity struct {
+	// Required fields
+	*proto.Entity
+
+	// Custom Fields
+	// Add fields here for any state that the entity should keep track of
+	// ...
+}
+
+func NewTemplateEntity() *TemplateEntity {
+	new_ent := &TemplateEntity{
+        Entity: proto.NewEntity(),
+        
+        // Initialize custom fields here...
+    }
+	return new_ent
+}
+
+func (ent *TemplateEntity) Init() {
+	// Initialization logic for the entity
+	// ...
+}
+
+func (ent *TemplateEntity) Deinit() {
+	// De-initialization logic for the entity
+	// ...
+}
+
+func (ent *TemplateEntity) Update() {
+	// Update logic for the entity
+	// ...
+}
+
+func (ent *TemplateEntity) Draw() {
+	// Draw logic for the entity
+	// ...
+}
+
+func (ent *TemplateEntity) OnInputEvent(event *input.InputEvent) bool {
+	// Logic to run when an input event is received.
+	// Return false if the event was consumed and should not be propagated
+	// further.
+	// ...
+	return true
+}

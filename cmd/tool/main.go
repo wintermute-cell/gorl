@@ -1,5 +1,9 @@
 package main
 
+import (
+	"gorl/tool"
+)
+
 func main() {
-	// code here
+	tool.Execute()
 }

@@ -1,0 +1,2 @@
+INFO: 2024/05/13 13:27:57 main.go:45: Logging initialized
+WARN: 2024/05/13 13:27:57 main.go:49: Settings loading unsuccessful, using fallback.
