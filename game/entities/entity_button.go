@@ -2,6 +2,7 @@ package entities
 
 import (
 	"gorl/fw/core/entities/proto"
+	"gorl/fw/core/gem"
 	input "gorl/fw/core/input/input_event"
 	"gorl/fw/core/logging"
 	"gorl/fw/core/render"
@@ -54,10 +55,10 @@ func (ent *ButtonEntity2D) Draw() {
 }
 
 func (ent *ButtonEntity2D) OnInputEvent(event *input.InputEvent) bool {
-	mousePos := event.GetScreenSpaceMousePosition()
-	mousePosCamSpace := render.PointToCameraSpace(, mousePos)
 	if event.Action == input.ActionClickDown {
-		hit := rl.CheckCollisionPointRec(mousePos, rl.NewRectangle(ent.GetPosition().X, ent.GetPosition().Y, 100*ent.GetScale().X, 100*ent.GetScale().Y))
+		mousePos := event.GetScreenSpaceMousePosition()
+		mousePosCamSpace := gem.ScreenspaceToCameraspace(ent, mousePos)
+		hit := rl.CheckCollisionPointRec(mousePosCamSpace, rl.NewRectangle(ent.GetPosition().X, ent.GetPosition().Y, 100*ent.GetScale().X, 100*ent.GetScale().Y))
 		if hit {
 			logging.Debug("Button hit! %v", ent.GetName())
 			render.SetCameraPosition(ent.GetPosition())

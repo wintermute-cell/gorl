@@ -33,7 +33,7 @@ func HandleInputEvents(orderedEntities [][]proto.IEntity) {
 func checkForInputs() []*input.InputEvent {
 
 	events := []*input.InputEvent{}
-	mousePosition := rl.GetMousePosition() // TODO: do we need to do some calculations with camera and stuff or is this fine?
+	mousePosition := rl.GetMousePosition()
 
 	for action, triggers := range input.ActionMap {
 		for _, trigger := range triggers {

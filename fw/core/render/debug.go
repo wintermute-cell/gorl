@@ -34,8 +34,8 @@ func DebugDrawStageViewports(position rl.Vector2, widgetScale int32, renderStage
 	for idx, stage := range renderStages {
 		// Calculate the viewport rectangle based on render resolution and camera zoom
 		viewportRect := rl.Rectangle{
-			X:      position.X + float32(stage.camera.Target.X-(stage.camera.Offset.X/stage.resolutionCorrection))*stage.camera.Zoom/float32(widgetScale),
-			Y:      position.Y + float32(stage.camera.Target.Y-(stage.camera.Offset.Y/stage.resolutionCorrection))*stage.camera.Zoom/float32(widgetScale),
+			X:      position.X + float32(stage.Camera.Target.X-(stage.Camera.Offset.X/stage.resolutionCorrection))*stage.Camera.Zoom/float32(widgetScale),
+			Y:      position.Y + float32(stage.Camera.Target.Y-(stage.Camera.Offset.Y/stage.resolutionCorrection))*stage.Camera.Zoom/float32(widgetScale),
 			Width:  float32(rs.screenResolution.X) * stage.managedCameraZoom / float32(widgetScale),
 			Height: float32(rs.screenResolution.Y) * stage.managedCameraZoom / float32(widgetScale),
 		}

@@ -63,9 +63,11 @@ func main() {
 
 	renderRatio := float32(settings.CurrentSettings().RenderWidth) / float32(settings.CurrentSettings().ScreenWidth)
 	// renders at default resolution
-	defaultRenderStage := render.NewRenderStage(rl.NewVector2(
-		float32(settings.CurrentSettings().RenderWidth),
-		float32(settings.CurrentSettings().RenderHeight)), renderRatio)
+	render.CreateRenderStage(gem.DefaultLayer,
+		rl.NewVector2(
+			float32(settings.CurrentSettings().RenderWidth),
+			float32(settings.CurrentSettings().RenderHeight),
+		), renderRatio)
 
 	// renders at double resolution
 	//doubleResRenderStage := render.NewRenderStage(rl.NewVector2(
@@ -140,27 +142,32 @@ func main() {
 	gem.AddEntity(gem.GetRoot(), button2, gem.DefaultLayer)
 
 	// keeps a list of entities in draw order, so we can pass input event in the correct order.
-	orderedEntities := [][]proto.IEntity{}
+	inputEventReceivers := [][]proto.IEntity{}
 	for !shouldExit {
 		now = time.Now()
 
-		orderedEntities = [][]proto.IEntity{}
+		inputEventReceivers = [][]proto.IEntity{}
 
 		//animation.UpdatePremades()
 		//render.UpdateEffects()
 
 		game.Update()
+		sortedEntityLayers := gem.UpdateEntities(false)
 		scenes.UpdateScenes()
-		// scenes.FixedUpdateScenes()
+		//scenes.FixedUpdateScenes()
 
 		rl.BeginDrawing()
 
 		rl.ClearBackground(rl.RayWhite)
 
-		render.EnableRenderStage(defaultRenderStage)
+		render.EnableRenderStage(render.GetRenderStage(gem.DefaultLayer))
 		rl.ClearBackground(rl.Blank)
 
-		orderedEntities = append(orderedEntities, gem.DrawLayer(gem.DefaultLayer))
+		// TODO: can we make this syntax nicer? 4 lines is a little much.
+		if layer, ok := sortedEntityLayers[gem.DefaultLayer]; ok {
+			inputEventReceivers = append(inputEventReceivers, layer)
+			gem.DrawEntitySlice(layer)
+		}
 
 		//render.EnableRenderStage(doubleResRenderStage)
 		//rl.ClearBackground(rl.Blank)
@@ -191,7 +198,7 @@ func main() {
 		// input is processed at the end of the frame, because here we know in
 		// what order the entities were drawn, and can be sure whatever the
 		// user clicked was really visible at the front.
-		input.HandleInputEvents(orderedEntities)
+		input.HandleInputEvents(inputEventReceivers)
 
 		// Draw Debug Info
 		rl.DrawFPS(10, 10)

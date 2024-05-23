@@ -2,20 +2,8 @@ package gem
 
 import rl "github.com/gen2brain/raylib-go/raylib"
 
-// DebugDrawEntities draws a list of all entities by their name.
-func DebugDrawEntities(position rl.Vector2, size int32) {
-	rl.DrawText("Entities:", int32(position.X), int32(position.Y), size, rl.Lime)
-	for lidx, layer := range gemInstance.entities {
-		for eidx, entity := range layer {
-			rl.DrawText(entity.GetName(), int32(position.X),
-				int32(position.Y+float32(size*(int32(eidx)+1+int32(lidx)*int32(len(layer))))),
-				size, rl.Lime)
-		}
-	}
-}
-
 // Helper function to recursively draw the hierarchy.
-func drawHierarchyNode(node *hierarchyNode, position rl.Vector2, size int32, depth int32) rl.Vector2 {
+func drawHierarchyNode(node *entityNode, position rl.Vector2, size int32, depth int32) rl.Vector2 {
 	if node == nil {
 		return position
 	}
@@ -41,7 +29,7 @@ func drawHierarchyNode(node *hierarchyNode, position rl.Vector2, size int32, dep
 
 func DebugDrawHierarchy(position rl.Vector2, size int32) {
 	rl.DrawText("Hierarchy:", int32(position.X), int32(position.Y), size, rl.Lime)
-	if gemInstance.hierarchyRoot != nil {
-		drawHierarchyNode(gemInstance.hierarchyRoot, rl.Vector2{X: position.X, Y: position.Y + float32(size)}, size, 1)
+	if gemInstance.root != nil {
+		drawHierarchyNode(gemInstance.root, rl.Vector2{X: position.X, Y: position.Y + float32(size)}, size, 1)
 	}
 }

@@ -57,6 +57,7 @@ func applyCameraTransformations(camera *rl.Camera2D) {
 	cameraTransformations.reset()
 }
 
+// TODO: these transforms have to be applied to the correct camera / render stage
 func SetCameraPosition(position rl.Vector2) {
 	cameraTransformations.Position = append(cameraTransformations.Position, position)
 }

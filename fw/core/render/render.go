@@ -43,8 +43,8 @@ func EnableRenderStage(stage *RenderStage) {
 
 	rs.currentStage = stage
 	rl.BeginTextureMode(rs.currentStage.renderTexture)
-	rl.BeginMode2D(rs.currentStage.camera)
-	applyCameraTransformations(&stage.camera)
+	rl.BeginMode2D(rs.currentStage.Camera)
+	applyCameraTransformations(&stage.Camera)
 }
 
 // FlushRenderStage flushes the current RenderStage to the RenderSystem's
