@@ -23,3 +23,17 @@ func (scn *TemplateScene) Deinit() {
 	// De-initialization logic for the scene
 }
 
+func (scn *GameViewScene) Update() {
+	// Update logic for the scene
+	// ...
+}
+
+func (scn *GameViewScene) FixedUpdate() {
+	// FixedUpdate logic for the scene
+	// ...
+}
+
+func (scn *GameViewScene) GetRoot() *proto.Entity {
+	// Return the root entity for the scene
+	return scn.Root
+}
