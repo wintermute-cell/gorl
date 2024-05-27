@@ -7,6 +7,7 @@ const (
 	TriggerTypeDown TriggerType = iota
 	TriggerTypePressed
 	TriggerTypeReleased
+	TriggerTypePassive // Passive triggers are always active
 )
 
 // InputType defines the physical type of trigger. It can be a key, mouse

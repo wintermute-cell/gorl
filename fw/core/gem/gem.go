@@ -75,8 +75,8 @@ func traverseAndFlatten(node *entityNode, shouldCallUpdate, shouldCallFixedUpdat
 	}
 
 	// sort the layers by the entities GetDrawIndex
-	for _, layer := range layers {
-		slices.SortStableFunc(layer, func(a, b proto.IEntity) int {
+	for i := range layers {
+		slices.SortStableFunc(layers[i], func(a, b proto.IEntity) int {
 			return int(a.GetDrawIndex() - b.GetDrawIndex())
 		})
 	}

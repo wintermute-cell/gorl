@@ -1,4 +1,5 @@
 # TODO
+- fix scene template (remove draw funcs, add fixed-/update, impl scene root)
 - !!! document input code, document hierachical transforms
 
 - make a sample implementation of the ai module, remove the ai enemy grunt file afterwards.

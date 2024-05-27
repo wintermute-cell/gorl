@@ -71,7 +71,7 @@ def replace_fallback_settings(fallback_values, source):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        input_file = "./fw/settings/settings.go"
+        input_file = "./fw/core/settings/settings.go"
         output_file = "./assets/settings.json"
     else:
         input_file, output_file = sys.argv[1], sys.argv[2]

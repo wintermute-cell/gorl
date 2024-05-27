@@ -67,6 +67,8 @@ func checkForInputs() []*input.InputEvent {
 					if rl.IsMouseButtonReleased(trigger.MouseButton) {
 						events = append(events, input.NewInputEvent(action, mousePosition))
 					}
+				case input.TriggerTypePassive:
+					events = append(events, input.NewInputEvent(action, mousePosition))
 				}
 			case input.InputTypeGamepad:
 				// Implement the checks for gamepad buttons using a similar pattern

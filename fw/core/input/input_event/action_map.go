@@ -13,6 +13,7 @@ const (
 	ActionClickDown
 	ActionClickHeld
 	ActionClickUp
+	ActionMouseHover
 	ActionEscape
 	// Add other actions as needed
 )
@@ -38,6 +39,9 @@ var ActionMap = map[Action][]Trigger{
 	},
 	ActionClickUp: {
 		{InputType: InputTypeMouse, TriggerType: TriggerTypeReleased, MouseButton: rl.MouseLeftButton},
+	},
+	ActionMouseHover: {
+		{InputType: InputTypeMouse, TriggerType: TriggerTypePassive},
 	},
 	ActionEscape: {
 		{InputType: InputTypeKey, TriggerType: TriggerTypeDown, Key: rl.KeyEscape},
