@@ -1,0 +1,23 @@
+INFO: 2024/05/27 13:34:23 main.go:43: Logging initialized
+WARN: 2024/05/27 13:34:23 main.go:47: Settings loading unsuccessful, using fallback.
+INFO: 2024/05/27 13:34:23 render.go:23: Creating new RenderSystem with screen resolution: {960 540}
+INFO: 2024/05/27 13:34:23 render_stage.go:41: Creating new RenderStage with target resolution: {960 540}
+INFO: 2024/05/27 13:34:23 main.go:77: Custom rendering initialized.
+INFO: 2024/05/27 13:34:23 gem.go:138: Added entity Button 1 to parent GemRoot
+INFO: 2024/05/27 13:34:23 gem.go:138: Added entity Button 2 to parent GemRoot
+DEBG: 2024/05/27 13:34:38 entity_button.go:63: Button hit! Button 1
+DEBG: 2024/05/27 13:34:40 entity_button.go:63: Button hit! Button 1
+DEBG: 2024/05/27 13:34:41 entity_button.go:63: Button hit! Button 1
+DEBG: 2024/05/27 13:34:41 entity_button.go:63: Button hit! Button 2
+DEBG: 2024/05/27 13:34:43 entity_button.go:63: Button hit! Button 2
+DEBG: 2024/05/27 13:34:43 entity_button.go:63: Button hit! Button 2
+INFO: 2024/05/27 13:34:49 main.go:43: Logging initialized
+WARN: 2024/05/27 13:34:49 main.go:47: Settings loading unsuccessful, using fallback.
+INFO: 2024/05/27 13:34:49 render.go:23: Creating new RenderSystem with screen resolution: {960 540}
+INFO: 2024/05/27 13:34:49 render_stage.go:41: Creating new RenderStage with target resolution: {960 540}
+INFO: 2024/05/27 13:34:49 main.go:77: Custom rendering initialized.
+INFO: 2024/05/27 13:34:49 gem.go:138: Added entity Button 1 to parent GemRoot
+INFO: 2024/05/27 13:34:49 gem.go:138: Added entity Button 2 to parent GemRoot
+DEBG: 2024/05/27 13:34:50 entity_button.go:63: Button hit! Button 2
+DEBG: 2024/05/27 13:34:52 entity_button.go:63: Button hit! Button 2
+DEBG: 2024/05/27 13:34:52 entity_button.go:63: Button hit! Button 2

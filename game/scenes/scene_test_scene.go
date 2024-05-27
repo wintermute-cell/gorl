@@ -5,21 +5,28 @@ import (
 )
 
 // This checks at compile time if the interface is implemented
-var _ Scene = (*TemplateScene)(nil)
+var _ scenes.Scene = (*TestSceneScene)(nil)
 
-// Template Scene
-type TemplateScene struct {
+// TestScene Scene
+type TestSceneScene struct {
 	// Custom Fields
 	// Add fields here for any state that the scene should keep track of
 	// ...
 }
 
-func (scn *TemplateScene) Init() {
+func (scn *TestSceneScene) Init() {
 	// Initialization logic for the scene
 	// ...
 }
 
-func (scn *TemplateScene) Deinit() {
+func (scn *TestSceneScene) Deinit() {
 	// De-initialization logic for the scene
 }
 
+func (scn *TestSceneScene) DrawGUI() {
+	// Draw the GUI for the scene
+}
+
+func (scn *TestSceneScene) Draw() {
+	// Draw the scene
+}
