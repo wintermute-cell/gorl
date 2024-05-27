@@ -12,7 +12,7 @@ import (
 	"gorl/fw/core/settings"
 	"gorl/fw/modules/scenes"
 	"gorl/game"
-	"gorl/game/entities"
+	// "gorl/game/entities"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
@@ -134,12 +134,8 @@ func main() {
 	now := time.Now()
 	var avgTime time.Duration
 
-	button1 := entities.NewButtonEntity2D(rl.NewVector2(100, 100), 0, rl.NewVector2(1, 1))
-	button1.Name = "Button 1"
-	button2 := entities.NewButtonEntity2D(rl.NewVector2(500, 100), 0, rl.NewVector2(1, 1))
-	button2.Name = "Button 2"
-	gem.AddEntity(gem.GetRoot(), button1, gem.DefaultLayer)
-	gem.AddEntity(gem.GetRoot(), button2, gem.DefaultLayer)
+	// gem.AddEntity(gem.GetRoot(), button2, gem.DefaultLayer)
+
 
 	// keeps a list of entities in draw order, so we can pass input event in the correct order.
 	inputEventReceivers := [][]proto.IEntity{}
