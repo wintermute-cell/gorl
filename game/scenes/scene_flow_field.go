@@ -6,36 +6,36 @@ import (
 )
 
 // This checks at compile time if the interface is implemented
-var _ Scene = (*TemplateScene)(nil)
+var _ scenes.Scene = (*FlowFieldScene)(nil)
 
-// Template Scene
-type TemplateScene struct {
+// FlowField Scene
+type FlowFieldScene struct {
 	// Custom Fields
 	// Add fields here for any state that the scene should keep track of
 	// ...
 	Root *proto.Entity
 }
 
-func (scn *TemplateScene) Init() {
+func (scn *FlowFieldScene) Init() {
 	// Initialization logic for the scene
 	// ...
 }
 
-func (scn *TemplateScene) Deinit() {
+func (scn *FlowFieldScene) Deinit() {
 	// De-initialization logic for the scene
 }
 
-func (scn *TemplateScene) Update() {
+func (scn *FlowFieldScene) Update() {
 	// Update logic for the scene
 	// ...
 }
 
-func (scn *TemplateScene) FixedUpdate() {
+func (scn *FlowFieldScene) FixedUpdate() {
 	// FixedUpdate logic for the scene
 	// ...
 }
 
-func (scn *TemplateScene) GetRoot() *proto.Entity {
+func (scn *FlowFieldScene) GetRoot() *proto.Entity {
 	// Return the root entity for the scene
 	return scn.Root
 }

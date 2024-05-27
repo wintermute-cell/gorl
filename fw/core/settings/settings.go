@@ -12,8 +12,8 @@ type GameSettings struct {
 	// Display
 	ScreenWidth     int  `json:"screenWidth"`     // 960
 	ScreenHeight    int  `json:"screenHeight"`    // 540
-	RenderWidth     int  `json:"renderWidth"`     // 960
-	RenderHeight    int  `json:"renderHeight"`    // 540
+	RenderWidth     int  `json:"renderWidth"`     // 1920
+	RenderHeight    int  `json:"renderHeight"`    // 1080
 	TargetFps       int  `json:"targetFps"`       // 144
 	Fullscreen      bool `json:"fullscreen"`      // false
 	EnableCrtEffect bool `json:"enableCrtEffect"` // true
@@ -42,8 +42,8 @@ func UseFallbackSettings() {
 		Title:  "made with gorl",
 		ScreenWidth:  960,
 		ScreenHeight:  540,
-		RenderWidth:  960,
-		RenderHeight:  540,
+		RenderWidth:  1920,
+		RenderHeight:  1080,
 		TargetFps:  144,
 		Fullscreen:  false,
 		EnableCrtEffect:  true,
