@@ -3,7 +3,7 @@ package gem
 import rl "github.com/gen2brain/raylib-go/raylib"
 
 // Helper function to recursively draw the hierarchy.
-func drawHierarchyNode(node *entityNode, position rl.Vector2, size int32, depth int32) rl.Vector2 {
+func drawHierarchyNode(node *gemNode, position rl.Vector2, size int32, depth int32) rl.Vector2 {
 	if node == nil {
 		return position
 	}

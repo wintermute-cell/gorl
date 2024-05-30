@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"gorl/fw/core/entities/proto"
 	"gorl/fw/core/gem"
 	input "gorl/fw/core/input/input_handling"
 	"gorl/fw/core/logging"
 	"gorl/fw/core/render"
 	"gorl/fw/core/settings"
-	"gorl/fw/modules/scenes"
 	"gorl/game"
 	// "gorl/game/entities"
 
@@ -60,21 +58,9 @@ func main() {
 	render.Init(rl.NewVector2(
 		float32(settings.CurrentSettings().ScreenWidth),
 		float32(settings.CurrentSettings().ScreenHeight)))
+	defer render.Deinit()
 
-	renderRatio := float32(settings.CurrentSettings().RenderWidth) / float32(settings.CurrentSettings().ScreenWidth)
-	// renders at default resolution
-	render.CreateRenderStage(gem.DefaultLayer,
-		rl.NewVector2(
-			float32(settings.CurrentSettings().RenderWidth),
-			float32(settings.CurrentSettings().RenderHeight),
-		), renderRatio)
-
-	// renders at double resolution
-	//doubleResRenderStage := render.NewRenderStage(rl.NewVector2(
-	//	float32(settings.CurrentSettings().RenderWidth*2),
-	//	float32(settings.CurrentSettings().RenderHeight*2)), 2)
-
-	logging.Info("Custom rendering initialized.")
+	logging.Info("Rendering initialized.")
 
 	// initialize audio
 	//audio.InitAudio()
@@ -88,8 +74,6 @@ func main() {
 	//physics.InitPhysics((1.0 / 60.0), rl.Vector2Zero(), (1.0 / 32.0))
 	//defer physics.DeinitPhysics()
 
-	//gem.InitGem(physics.GetTimestep())
-	//gem.InitGem(0)
 	gem.Init()
 	defer gem.Deinit()
 
@@ -131,95 +115,48 @@ func main() {
 	shouldExit := false
 
 	// frame time measurement stuff
-	now := time.Now()
-	var avgTime time.Duration
+	frameStart := time.Now()
 
 	// gem.AddEntity(gem.GetRoot(), button2, gem.DefaultLayer)
 
-
-	// keeps a list of entities in draw order, so we can pass input event in the correct order.
-	inputEventReceivers := [][]proto.IEntity{}
 	for !shouldExit {
-		now = time.Now()
+		frameStart = time.Now()
 
-		inputEventReceivers = [][]proto.IEntity{}
+		drawables, nonDrawableInputReceivers := gem.Traverse(false) // TODO: add fixed update timing
 
-		//animation.UpdatePremades()
-		//render.UpdateEffects()
-
-		game.Update()
-		sortedEntityLayers := gem.UpdateEntities(false)
-		scenes.UpdateScenes()
+		//scenes.UpdateScenes() // TODO: rework scenes to be more clear
 		//scenes.FixedUpdateScenes()
 
 		rl.BeginDrawing()
-
 		rl.ClearBackground(rl.RayWhite)
 
-		render.EnableRenderStage(render.GetRenderStage(gem.DefaultLayer))
-		rl.ClearBackground(rl.Blank)
-
-		// TODO: can we make this syntax nicer? 4 lines is a little much.
-		if layer, ok := sortedEntityLayers[gem.DefaultLayer]; ok {
-			inputEventReceivers = append(inputEventReceivers, layer)
-			gem.DrawEntitySlice(layer)
-		}
-
-		//render.EnableRenderStage(doubleResRenderStage)
-		//rl.ClearBackground(rl.Blank)
-		//gem.Draw(gem.GetByLayer(gem.DefaultLayer + 1))
-
-		render.FlushRenderStage()
-		render.RenderToScreen()
-
-		//collision.Update()
-		//physics.Update()
-
-		// lighting
-		//lighting.DrawLight()
-
-		//physics.DrawColliders(true, false, false)
-
-		// begin drawing the gui
-		//render.BeginCustomRenderScreenspace()
-
-		//rl.ClearBackground(rl.Blank) // clear the main rendertex
-
-		//scenes.Sm.DrawScenesGUI()
-		//gem.DrawEntitiesGUI()
-
-		//render.EndCustomRender()
-		//mousecursor.Draw()
+		drawableInputReceivers := render.Draw(drawables)
 
 		// input is processed at the end of the frame, because here we know in
 		// what order the entities were drawn, and can be sure whatever the
 		// user clicked was really visible at the front.
+		inputEventReceivers := append(nonDrawableInputReceivers, drawableInputReceivers...)
 		input.HandleInputEvents(inputEventReceivers)
 
 		// Draw Debug Info
-		rl.DrawFPS(10, 10)
-		rl.DrawText("dt: "+avgTime.String(), 10, 30, 20, rl.Lime)
-		//render.DebugDrawStageViewports(
-		//	rl.NewVector2(10, 10), 4, render,
-		//	[]*render.RenderStage{defaultRenderStage},
-		//)
-		//gem.DebugDrawEntities(rl.NewVector2(10, 50), 12)
-		gem.DebugDrawHierarchy(rl.NewVector2(10, 50), 8)
+		DrawDebugInfo(frameStart)
 
 		rl.EndDrawing()
 
 		//audio.Update()
 		shouldExit = rl.WindowShouldClose() // || scenes.Sm.ShouldExit()
-
-		// calculate the time it took to render the frame.
-		// we must do this after the frame is drawn.
-		if avgTime == 0 {
-			avgTime = time.Since(now)
-		} else {
-			avgTime = (avgTime + time.Since(now)) / 2
-		}
-
 	}
 
 	//scenes.Sm.DisableAllScenes()
+}
+
+func DrawDebugInfo(frameStart time.Time) {
+	rl.DrawFPS(10, 10)
+	rl.DrawText("dt: "+time.Since(frameStart).String(), 10, 30, 20, rl.Lime)
+	//render.DebugDrawStageViewports(
+	//	rl.NewVector2(10, 10), 4, render,
+	//	[]*render.RenderStage{defaultRenderStage},
+	//)
+	//gem.DebugDrawEntities(rl.NewVector2(10, 50), 12)
+	gem.DebugDrawHierarchy(rl.NewVector2(10, 50), 8)
 }

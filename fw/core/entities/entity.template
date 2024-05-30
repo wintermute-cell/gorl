@@ -1,50 +1,52 @@
 package entities
 
 import (
-	"gorl/fw/core/entities/proto"
+	rl "github.com/gen2brain/raylib-go/raylib"
 	input "gorl/fw/core/input/input_event"
+	"gorl/fw/core/entities/proto"
 )
 
 // Template Entity
-type TemplateEntity struct {
+type TemplateEntity2D struct {
 	// Required fields
-	*proto.Entity
+	*proto.Entity2D
 
 	// Custom Fields
 	// Add fields here for any state that the entity should keep track of
 	// ...
 }
 
-func NewTemplateEntity() *TemplateEntity {
-	new_ent := &TemplateEntity{
-        Entity: proto.NewEntity(),
-        
-        // Initialize custom fields here...
-    }
+func NewTemplateEntity2D(position rl.Vector2, rotation float32, scale rl.Vector2) *TemplateEntity2D {
+	new_ent := &TemplateEntity2D{
+		Entity2D: proto.NewEntity2D(position, rotation, scale),
+
+		// Initialize custom fields here
+		// ...
+	}
 	return new_ent
 }
 
-func (ent *TemplateEntity) Init() {
+func (ent *TemplateEntity2D) Init() {
 	// Initialization logic for the entity
 	// ...
 }
 
-func (ent *TemplateEntity) Deinit() {
+func (ent *TemplateEntity2D) Deinit() {
 	// De-initialization logic for the entity
 	// ...
 }
 
-func (ent *TemplateEntity) Update() {
+func (ent *TemplateEntity2D) Update() {
 	// Update logic for the entity
 	// ...
 }
 
-func (ent *TemplateEntity) Draw() {
+func (ent *TemplateEntity2D) Draw() {
 	// Draw logic for the entity
 	// ...
 }
 
-func (ent *TemplateEntity) OnInputEvent(event *input.InputEvent) bool {
+func (ent *TemplateEntity2D) OnInputEvent(event *input.InputEvent) bool {
 	// Logic to run when an input event is received.
 	// Return false if the event was consumed and should not be propagated
 	// further.

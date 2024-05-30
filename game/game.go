@@ -12,7 +12,3 @@ func Init() {
 	// This code is run before the game loop starts.
 	// NOTE: hier szenen initialisieren
 }
-
-func Update() {
-	// This code is run every frame, before drawing.
-}

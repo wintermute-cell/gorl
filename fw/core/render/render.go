@@ -1,94 +1,141 @@
 package render
 
 import (
-	"gorl/fw/core/logging"
+	input "gorl/fw/core/input/input_handling"
+	"gorl/fw/core/math"
+	"slices"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-type RenderSystem struct {
-	screenResolution rl.Vector2
-	renderTexture    rl.RenderTexture2D
-	currentStage     *RenderStage
+// Drawable is an interface that should be implemented by any object that
+// is intended to be rendered.
+type Drawable interface {
+	ShouldDraw(layerFlags math.BitFlag) bool
+	Draw()
+	GetDrawIndex() int32
+	AsInputReceiver() input.InputReceiver
 }
 
-var rs *RenderSystem
-
-func Init(screenResolution rl.Vector2) {
-	rs = newRenderSystem(screenResolution)
+// renderer is a set of cameras and a final render target that is used to
+// render all drawables.
+type renderer struct {
+	cameras     []*Camera
+	finalTarget rl.RenderTexture2D
 }
 
-// newRenderSystem creates a new RenderSystem with the given screen resolution.
-func newRenderSystem(screenResolution rl.Vector2) *RenderSystem {
-	logging.Info("Creating new RenderSystem with screen resolution: %v", screenResolution)
-	renderSystem := &RenderSystem{
-		screenResolution: screenResolution,
-		renderTexture: rl.LoadRenderTexture(
-			int32(screenResolution.X),
-			int32(screenResolution.Y),
+// Init initializes the renderer with the given screen size.
+func Init(screenSize rl.Vector2) {
+	rendererInstance = renderer{
+		cameras: []*Camera{},
+		finalTarget: rl.LoadRenderTexture(
+			int32(screenSize.X),
+			int32(screenSize.Y),
 		),
 	}
-	return renderSystem
 }
 
-// EnableRenderStage sets the RenderSystem to render using the given RenderStage.
-func EnableRenderStage(stage *RenderStage) {
-	if stage == nil {
-		logging.Error("Attempted to enable nil RenderStage.")
-		return
-	}
-
-	// if there is a current stage, flush it to the render system's texture
-	FlushRenderStage()
-
-	rs.currentStage = stage
-	rl.BeginTextureMode(rs.currentStage.renderTexture)
-	rl.BeginMode2D(rs.currentStage.Camera)
-	applyCameraTransformations(&stage.Camera)
+// Deinit deinitializes the renderer.
+func Deinit() {
+	rl.UnloadRenderTexture(rendererInstance.finalTarget)
 }
 
-// FlushRenderStage flushes the current RenderStage to the RenderSystem's
-// texture. This is done automatically when switching stages, but can be called
-// manually to finalize the last stage for this frame.
-func FlushRenderStage() {
-	// if a stage is already enabled, end it and flush its texture to the
-	// render systems texture
-	if rs.currentStage != nil {
-		// if there is a current stage, we must be in it's texture mode.
-		// end it.
+// SetScreenSize changes the size of the screen.
+func SetScreenSize(screenSize rl.Vector2) {
+	rl.UnloadRenderTexture(rendererInstance.finalTarget)
+	rendererInstance.finalTarget = rl.LoadRenderTexture(
+		int32(screenSize.X),
+		int32(screenSize.Y),
+	)
+}
+
+// rendererInstance is the global renderer instance.
+var rendererInstance renderer
+
+// Draw draws the given drawable to the screen, using all cameras.
+// Returns the sorted list of drawables, back to front.
+func Draw(drawables []Drawable) []input.InputReceiver {
+
+	inputReceivers := []input.InputReceiver{}
+
+	// sort the drawables by draw index
+	slices.SortStableFunc(drawables, func(l, r Drawable) int {
+		return int(l.GetDrawIndex() - r.GetDrawIndex())
+	})
+
+	for _, camera := range rendererInstance.cameras {
+		rl.BeginTextureMode(camera.renderTarget.renderTexture)
+		rl.BeginMode2D(*camera.rlcamera)
+		rl.ClearBackground(rl.Blank)
+
+		// Draw all drawables that should be drawn by this camera.
+		for _, drawable := range drawables {
+			if drawable.ShouldDraw(camera.drawFlags) {
+				inputReceivers = append(inputReceivers, drawable.AsInputReceiver())
+				drawable.Draw()
+			}
+		}
+
 		rl.EndMode2D()
 		rl.EndTextureMode()
-
-		// draw the current stage's texture to the render system's texture
-		rl.BeginTextureMode(rs.renderTexture)
-		rl.DrawTexturePro(
-			rs.currentStage.renderTexture.Texture,
-			rl.NewRectangle(0, 0, rs.currentStage.targetResolution.X, -rs.currentStage.targetResolution.Y),
-			rl.NewRectangle(0, 0, rs.screenResolution.X, rs.screenResolution.Y),
-			rl.NewVector2(0, 0), 0, rl.White)
-		rl.EndTextureMode()
-
-		rs.currentStage = nil
 	}
+
+	// Draw all camera render targets to the final target.
+	// Apply per camera shaders in the process.
+	rl.BeginTextureMode(rendererInstance.finalTarget)
+	rl.ClearBackground(rl.RayWhite)
+	for _, camera := range rendererInstance.cameras {
+		applyShaders(camera)
+		rl.DrawTexturePro(
+			camera.renderTarget.renderTexture.Texture,
+			rl.NewRectangle(0, 0, float32(camera.renderTarget.renderTexture.Texture.Width), -float32(camera.renderTarget.renderTexture.Texture.Height)),
+			rl.NewRectangle(
+				camera.renderTarget.DisplayPosition.X,
+				camera.renderTarget.DisplayPosition.Y,
+				camera.renderTarget.DisplaySize.X,
+				camera.renderTarget.DisplaySize.Y,
+			),
+			rl.NewVector2(0, 0),
+			0, rl.White,
+		)
+	}
+	rl.EndTextureMode()
+
+	return inputReceivers
 }
 
-// RenderToScreen renders the accumulated contents of all render stages used
-// with the render system to the screen.
-func RenderToScreen() {
+// ApplyShaders applies the shaders of the camera to the cameras render target.
+func applyShaders(camera *Camera) {
+	bounceTexture := rl.LoadRenderTexture(camera.renderTarget.renderTexture.Texture.Width, camera.renderTarget.renderTexture.Texture.Height)
 
-	if rs.currentStage != nil {
-		logging.Warning("RenderSystem.RenderToScreen called with active RenderStage. Call FlushRenderStage first.")
-		FlushRenderStage()
+	currentSource := &camera.renderTarget.renderTexture
+	currentTarget := &bounceTexture
+
+	for _, shader := range camera.shaders {
+		rl.BeginTextureMode(*currentTarget)
+		rl.BeginShaderMode(*shader)
+		rl.DrawTexturePro(
+			currentSource.Texture,
+			rl.NewRectangle(0, 0, float32(currentSource.Texture.Width), -float32(currentSource.Texture.Height)),
+			rl.NewRectangle(0, 0, float32(currentTarget.Texture.Width), float32(currentTarget.Texture.Height)),
+			rl.NewVector2(0, 0),
+			0, rl.White,
+		)
+		rl.EndShaderMode()
+		rl.EndTextureMode()
+		tmp := currentSource
+		currentSource = currentTarget
+		currentTarget = tmp
 	}
 
-	rl.DrawTexturePro(
-		rs.renderTexture.Texture,
-		rl.NewRectangle(0, 0, rs.screenResolution.X, -rs.screenResolution.Y),
-		rl.NewRectangle(0, 0, rs.screenResolution.X, rs.screenResolution.Y),
-		rl.NewVector2(0, 0), 0, rl.White)
-
-	// clear the render texture for the next frame
-	rl.BeginTextureMode(rs.renderTexture)
-	rl.ClearBackground(rl.Blank)
-	rl.EndTextureMode()
+	// if the last draw was to the bounce texture, draw it to the cameras target.
+	if currentSource == &bounceTexture {
+		rl.DrawTexturePro(
+			currentSource.Texture,
+			rl.NewRectangle(0, 0, float32(currentSource.Texture.Width), -float32(currentSource.Texture.Height)),
+			rl.NewRectangle(0, 0, float32(currentSource.Texture.Width), float32(currentSource.Texture.Height)),
+			rl.NewVector2(0, 0),
+			0, rl.White,
+		)
+	}
 }
