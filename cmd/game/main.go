@@ -116,6 +116,7 @@ func main() {
 
 	// frame time measurement stuff
 	frameStart := time.Now()
+	var frameTime time.Duration = 0
 
 	// gem.AddEntity(gem.GetRoot(), button2, gem.DefaultLayer)
 
@@ -139,20 +140,22 @@ func main() {
 		input.HandleInputEvents(inputEventReceivers)
 
 		// Draw Debug Info
-		DrawDebugInfo(frameStart)
+		DrawDebugInfo(frameTime)
 
 		rl.EndDrawing()
 
 		//audio.Update()
+		frameTime = time.Since(frameStart) // calculate after rl.EndDrawing() to include rendering time
+
 		shouldExit = rl.WindowShouldClose() // || scenes.Sm.ShouldExit()
 	}
 
 	//scenes.Sm.DisableAllScenes()
 }
 
-func DrawDebugInfo(frameStart time.Time) {
+func DrawDebugInfo(frameTime time.Duration) {
 	rl.DrawFPS(10, 10)
-	rl.DrawText("dt: "+time.Since(frameStart).String(), 10, 30, 20, rl.Lime)
+	rl.DrawText("dt: "+frameTime.String(), 10, 30, 20, rl.Lime)
 	//render.DebugDrawStageViewports(
 	//	rl.NewVector2(10, 10), 4, render,
 	//	[]*render.RenderStage{defaultRenderStage},
