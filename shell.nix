@@ -1,5 +1,5 @@
 { pkgs ? import (fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz";
+    url = "https://github.com/NixOS/nixpkgs/archive/nixos-23.11.tar.gz";
   }) {}
 }:
 
@@ -26,6 +26,10 @@ pkgs.mkShell {
     libxkbcommon
   ];
 
+  # this is needed for delve to work with cgo
+  # see: https://wiki.nixos.org/wiki/Go#Using_cgo_on_NixOS
+  hardeningDisable = [ "fortify" ];
+
   shellHook = ''
     if [ -z "$IN_DEV_SHELL" ]; then
       echo -e "\033[1;32mEntering Nix shell...\033[0m"
@@ -37,7 +41,6 @@ pkgs.mkShell {
       echo -e "\033[1;31mAlready in Nix shell!\033[0m"
       exit 1
     fi
-    exec $SHELL
   '';
 }
 
