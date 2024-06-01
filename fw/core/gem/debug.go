@@ -27,6 +27,10 @@ func drawHierarchyNode(node *gemNode, position rl.Vector2, size int32, depth int
 	return rl.Vector2{X: position.X, Y: nextPosition.Y}
 }
 
+// DebugDrawHierarchy draws the hierarchy of entities in the Gem graph.
+//
+// WARNING: This function can be quite costly if there are lots of entities
+// (>1000) and should only be used for debugging.
 func DebugDrawHierarchy(position rl.Vector2, size int32) {
 	rl.DrawText("Hierarchy:", int32(position.X), int32(position.Y), size, rl.Lime)
 	if gemInstance.root != nil {

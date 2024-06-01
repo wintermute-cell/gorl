@@ -1,4 +1,4 @@
-package collections
+package datastructures
 
 type Stack[T any] struct {
 	items []T

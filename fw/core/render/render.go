@@ -101,15 +101,24 @@ func Draw(drawables []Drawable) []input.InputReceiver {
 	}
 	rl.EndTextureMode()
 
+	// Draw the final target to the screen.
+	// TODO: here we could apply final post processing shaders.
+
+	rl.DrawTexturePro(
+		rendererInstance.finalTarget.Texture,
+		rl.NewRectangle(0, 0, float32(rendererInstance.finalTarget.Texture.Width), -float32(rendererInstance.finalTarget.Texture.Height)),
+		rl.NewRectangle(0, 0, float32(rendererInstance.finalTarget.Texture.Width), float32(rendererInstance.finalTarget.Texture.Height)),
+		rl.NewVector2(0, 0),
+		0, rl.White,
+	)
+
 	return inputReceivers
 }
 
 // ApplyShaders applies the shaders of the camera to the cameras render target.
 func applyShaders(camera *Camera) {
-	bounceTexture := rl.LoadRenderTexture(camera.renderTarget.renderTexture.Texture.Width, camera.renderTarget.renderTexture.Texture.Height)
-
 	currentSource := &camera.renderTarget.renderTexture
-	currentTarget := &bounceTexture
+	currentTarget := &camera.bounceTexture
 
 	for _, shader := range camera.shaders {
 		rl.BeginTextureMode(*currentTarget)
@@ -129,7 +138,7 @@ func applyShaders(camera *Camera) {
 	}
 
 	// if the last draw was to the bounce texture, draw it to the cameras target.
-	if currentSource == &bounceTexture {
+	if currentSource == &camera.bounceTexture {
 		rl.DrawTexturePro(
 			currentSource.Texture,
 			rl.NewRectangle(0, 0, float32(currentSource.Texture.Width), -float32(currentSource.Texture.Height)),

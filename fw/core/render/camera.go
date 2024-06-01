@@ -22,6 +22,9 @@ type Camera struct {
 	renderTarget *renderTarget
 	drawFlags    math.BitFlag
 	shaders      []*rl.Shader
+
+	// a render texture used when applying the shader stack.
+	bounceTexture rl.RenderTexture2D
 }
 
 // NewCamera creates a new camera with the given target, offset, display size,
@@ -30,10 +33,11 @@ type Camera struct {
 func NewCamera(camTarget, camOffset, displaySize, displayPosition rl.Vector2, drawFlags math.BitFlag) *Camera {
 	rlCamera := rl.NewCamera2D(camOffset, camTarget, 0, 1)
 	camera := &Camera{
-		rlcamera:     &rlCamera,
-		renderTarget: &renderTarget{displayPosition, displaySize, rl.LoadRenderTexture(int32(displaySize.X), int32(displaySize.Y))},
-		drawFlags:    drawFlags,
-		shaders:      make([]*rl.Shader, 0),
+		rlcamera:      &rlCamera,
+		renderTarget:  &renderTarget{displayPosition, displaySize, rl.LoadRenderTexture(int32(displaySize.X), int32(displaySize.Y))},
+		drawFlags:     drawFlags,
+		shaders:       make([]*rl.Shader, 0),
+		bounceTexture: rl.LoadRenderTexture(int32(displaySize.X), int32(displaySize.Y)),
 	}
 	rendererInstance.cameras = append(rendererInstance.cameras, camera)
 	return camera

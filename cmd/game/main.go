@@ -7,9 +7,13 @@ import (
 	"gorl/fw/core/gem"
 	input "gorl/fw/core/input/input_handling"
 	"gorl/fw/core/logging"
+	"gorl/fw/core/math"
 	"gorl/fw/core/render"
 	"gorl/fw/core/settings"
+	"gorl/fw/core/store"
 	"gorl/game"
+	"gorl/game/entities"
+
 	// "gorl/game/entities"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -52,7 +56,8 @@ func main() {
 		int32(settings.CurrentSettings().ScreenHeight),
 		settings.CurrentSettings().Title)
 	defer rl.CloseWindow()
-	rl.SetTargetFPS(int32(settings.CurrentSettings().TargetFps))
+	//rl.SetTargetFPS(int32(settings.CurrentSettings().TargetFps))
+	rl.SetTargetFPS(9999)
 
 	// rendering
 	render.Init(rl.NewVector2(
@@ -118,6 +123,28 @@ func main() {
 	frameStart := time.Now()
 	var frameTime time.Duration = 0
 
+	cameraEntity := entities.NewCameraEntity(
+		rl.Vector2Zero(),
+		rl.Vector2Zero(),
+		rl.NewVector2(
+			float32(settings.CurrentSettings().ScreenWidth),
+			float32(settings.CurrentSettings().ScreenHeight),
+		),
+		rl.Vector2Zero(),
+		math.Flag0,
+	)
+	gem.Append(gem.GetRoot(), cameraEntity)
+
+	testEntities := []*entities.TemplateEntity{}
+	for i := 0; i < 4; i++ {
+		testEntities = append(testEntities, entities.NewTemplateEntity(
+			rl.NewVector2(float32(i), float32(i)),
+			0,
+			rl.NewVector2(1, 1),
+		))
+		gem.Append(gem.GetRoot(), testEntities[i])
+	}
+
 	// gem.AddEntity(gem.GetRoot(), button2, gem.DefaultLayer)
 
 	for !shouldExit {
@@ -129,7 +156,6 @@ func main() {
 		//scenes.FixedUpdateScenes()
 
 		rl.BeginDrawing()
-		rl.ClearBackground(rl.RayWhite)
 
 		drawableInputReceivers := render.Draw(drawables)
 
@@ -147,7 +173,8 @@ func main() {
 		//audio.Update()
 		frameTime = time.Since(frameStart) // calculate after rl.EndDrawing() to include rendering time
 
-		shouldExit = rl.WindowShouldClose() // || scenes.Sm.ShouldExit()
+		appState, ok := store.Get[*store.AppState]()
+		shouldExit = rl.WindowShouldClose() || (!ok || appState.ShouldQuit)
 	}
 
 	//scenes.Sm.DisableAllScenes()

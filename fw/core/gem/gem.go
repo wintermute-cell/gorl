@@ -42,13 +42,14 @@ func Init() {
 	gemInstance.nodeMap[gemInstance.root.entity] = gemInstance.root
 }
 
-// Root returns the root entity of the Gem graph.
-func Root() *entities.IEntity {
-	return &gemInstance.root.entity
+// GetRoot returns the root entity of the Gem graph.
+func GetRoot() entities.IEntity {
+	return gemInstance.root.entity
 }
 
 // Deinit deinitializes the global Gem graph, calling Deinit on all entities.
 func Deinit() {
+	// FIXME: causes segfault, fix
 	Remove(gemInstance.root.entity)
 }
 

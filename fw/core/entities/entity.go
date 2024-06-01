@@ -26,6 +26,7 @@ type Entity struct {
 
 	// LayerFlags is a bit flag that determines which layers the entity belongs to.
 	// Cameras can selectively render entities based on their layer flags.
+	// (Layer flags are not automatically inherited by children.)
 	layerFlags math.BitFlag
 }
 

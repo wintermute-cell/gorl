@@ -1,24 +1,30 @@
 package entities
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
+	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_event"
-	"gorl/fw/core/entities/proto"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+// Ensure that TemplateEntity implements IEntity.
+var _ entities.IEntity = &TemplateEntity{}
+
 // Template Entity
-type TemplateEntity2D struct {
-	// Required fields
-	*proto.Entity2D
+type TemplateEntity struct {
+	*entities.Entity // Required!
 
 	// Custom Fields
 	// Add fields here for any state that the entity should keep track of
 	// ...
 }
 
-func NewTemplateEntity2D(position rl.Vector2, rotation float32, scale rl.Vector2) *TemplateEntity2D {
-	new_ent := &TemplateEntity2D{
-		Entity2D: proto.NewEntity2D(position, rotation, scale),
+// NewTemplateEntity creates a new instance of the TemplateEntity.
+func NewTemplateEntity(position rl.Vector2, rotation float32, scale rl.Vector2) *TemplateEntity {
+	// NOTE: you can modify the constructor to take any parameters you need to
+	// initialize the entity.
+	new_ent := &TemplateEntity{
+		Entity: entities.NewEntity("TemplateEntity", position, rotation, scale),
 
 		// Initialize custom fields here
 		// ...
@@ -26,27 +32,27 @@ func NewTemplateEntity2D(position rl.Vector2, rotation float32, scale rl.Vector2
 	return new_ent
 }
 
-func (ent *TemplateEntity2D) Init() {
+func (ent *TemplateEntity) Init() {
 	// Initialization logic for the entity
 	// ...
 }
 
-func (ent *TemplateEntity2D) Deinit() {
+func (ent *TemplateEntity) Deinit() {
 	// De-initialization logic for the entity
 	// ...
 }
 
-func (ent *TemplateEntity2D) Update() {
-	// Update logic for the entity
+func (ent *TemplateEntity) Update() {
+	// Update logic for the entity per frame
 	// ...
 }
 
-func (ent *TemplateEntity2D) Draw() {
+func (ent *TemplateEntity) Draw() {
 	// Draw logic for the entity
 	// ...
 }
 
-func (ent *TemplateEntity2D) OnInputEvent(event *input.InputEvent) bool {
+func (ent *TemplateEntity) OnInputEvent(event *input.InputEvent) bool {
 	// Logic to run when an input event is received.
 	// Return false if the event was consumed and should not be propagated
 	// further.

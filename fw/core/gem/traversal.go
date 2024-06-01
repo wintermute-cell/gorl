@@ -1,50 +1,31 @@
 package gem
 
 import (
-	"gorl/fw/core/collections"
+	"gorl/fw/core/datastructures"
 	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_handling"
+	"gorl/fw/core/logging"
 	"gorl/fw/core/math"
 	"gorl/fw/core/render"
 )
 
-var _ render.Drawable = &WrappedEntity{}
+// GetAbsoluteTransform returns the absolute transform of the entity.
+func GetAbsoluteTransform(entity entities.IEntity) math.Transform2D {
+	entityNode, ok := gemInstance.nodeMap[entity]
+	if !ok {
+		logging.Error("Tried to get absolute transform for entity not existent in gem.")
+		return math.Transform2DZero()
+	}
 
-type WrappedEntity struct {
-	entities.IEntity
-	absTransform math.Transform2D
-}
+	// step through parents until we arrive at the root.
+	transformMat3 := entity.GetTransform().GenerateMatrix()
+	for entityNode.parent != gemInstance.root && entityNode.parent != nil { // we do a nil check just for good measure, normally it should stop at the root.
+		parentMat3 := entityNode.parent.entity.GetTransform().GenerateMatrix()
+		transformMat3 = transformMat3.Multiply(parentMat3)
+		entityNode = entityNode.parent
+	}
 
-// ShouldDraw checks if the entity should be drawn based on its layer flags,
-// enabled and visible properties.
-func (d WrappedEntity) ShouldDraw(layerFlags math.BitFlag) bool {
-	e := d.IEntity.IsEnabled()
-	v := d.IEntity.IsVisible()
-	f := d.IEntity.GetLayerFlags().IsAny(layerFlags)
-	return e && v && f
-}
-
-// Draw draws the entity.
-func (d WrappedEntity) Draw() {
-	oldTransform := *d.IEntity.GetTransform() // save the entity's old *local* transform
-	d.IEntity.SetTransform(d.absTransform)    // set the entity's transform to the new transform matrix
-	d.IEntity.Draw()                          // draw the entity
-	d.IEntity.SetTransform(oldTransform)      // restore the entity's old *local* transform
-}
-
-// GetEntity retrieves the wrapped entity.
-func (d WrappedEntity) GetEntity() entities.IEntity {
-	return d.IEntity
-}
-
-// AsDrawable returns the entity as a drawable.
-func (d WrappedEntity) AsDrawable() render.Drawable {
-	return d
-}
-
-// AsInputReceiver returns the entity as an input receiver.
-func (d WrappedEntity) AsInputReceiver() input.InputReceiver {
-	return d
+	return math.NewTransform2DFromMatrix3(transformMat3)
 }
 
 // Traverse traverses through the entity graph, updating the entities.
@@ -53,14 +34,14 @@ func Traverse(withFixedUpdate bool) ([]render.Drawable, []input.InputReceiver) {
 
 	root := gemInstance.root
 
-	nodeStack := collections.NewStack[*gemNode](0)
+	nodeStack := datastructures.NewStack[*gemNode](len(gemInstance.nodeMap))
 	nodeStack.Push(root)
 
-	transformStack := collections.NewStack[math.Matrix3](0)
+	transformStack := datastructures.NewStack[math.Matrix3](len(gemInstance.nodeMap))
 	transformStack.Push(math.Matrix3Identity())
 
-	drawables := make([]render.Drawable, 0)
-	inputReceivers := make([]input.InputReceiver, 0)
+	drawables := make([]render.Drawable, 0, len(gemInstance.nodeMap)/2)
+	inputReceivers := make([]input.InputReceiver, 0, len(gemInstance.nodeMap)/2)
 
 	for !nodeStack.IsEmpty() {
 

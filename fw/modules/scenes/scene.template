@@ -1,19 +1,19 @@
 package scenes
 
 import (
-	"gorl/fw/core/entities/proto"
 	"gorl/fw/modules/scenes"
 )
 
 // This checks at compile time if the interface is implemented
-var _ Scene = (*TemplateScene)(nil)
+var _ scenes.IScene = (*TemplateScene)(nil)
 
 // Template Scene
 type TemplateScene struct {
+    scenes.Scene // Required!
+
 	// Custom Fields
 	// Add fields here for any state that the scene should keep track of
 	// ...
-	Root *proto.Entity
 }
 
 func (scn *TemplateScene) Init() {
@@ -23,19 +23,5 @@ func (scn *TemplateScene) Init() {
 
 func (scn *TemplateScene) Deinit() {
 	// De-initialization logic for the scene
-}
-
-func (scn *TemplateScene) Update() {
-	// Update logic for the scene
-	// ...
-}
-
-func (scn *TemplateScene) FixedUpdate() {
-	// FixedUpdate logic for the scene
-	// ...
-}
-
-func (scn *TemplateScene) GetRoot() *proto.Entity {
-	// Return the root entity for the scene
-	return scn.Root
+    // ...
 }

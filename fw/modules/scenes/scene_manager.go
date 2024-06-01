@@ -1,15 +1,3 @@
-// SceneManager provides a manager for game scenes, automating the calling
-// of their Init(), Deinit(), Draw(), ... functions,
-// A SceneManager also features enabling/disabling, and ordering of scenes
-// for drawing operations.
-//
-// Usage:
-//    - Create a new SceneManager with `NewSceneManager`.
-//    - Register scenes using `RegisterScene(name, scene)`.
-//    - Control scene state with `EnableScene` and `DisableScene`.
-//    - Modify draw order using `MoveSceneToFront`, `MoveSceneToBack`, and `MoveSceneBefore`.
-//    - In the game loop, use `DrawScenes` and `DrawScenesGUI` to render scenes in their specified order.
-
 package scenes
 
 import (
@@ -19,16 +7,15 @@ import (
 )
 
 type sceneManager struct {
-	scenes         map[string]Scene
+	scenes         map[string]IScene
 	enabled_scenes map[string]bool
-	should_exit    bool
 }
 
 // Create a new SceneManager. A SceneManager will automatically take care of
 // your Scenes (calling their Init(), Deinit(), Draw(), DrawGUI() functions).
 func newSceneManager() *sceneManager {
 	return &sceneManager{
-		scenes:         make(map[string]Scene),
+		scenes:         make(map[string]IScene),
 		enabled_scenes: make(map[string]bool),
 	}
 }
@@ -37,7 +24,7 @@ func newSceneManager() *sceneManager {
 var sm *sceneManager = newSceneManager()
 
 // Register a scene with the SceneManager for automatic control
-func RegisterScene(name string, scene Scene) {
+func RegisterScene(name string, scene IScene) {
 	if _, exists := sm.scenes[name]; exists {
 		logging.Fatal("A scene with name \"%v\" is already registered.", name)
 	}
@@ -53,7 +40,7 @@ func EnableScene(name string) {
 
 	// Initialize the scene if it's not already enabled
 	if !sm.enabled_scenes[name] {
-		gem.AddEntity(gem.GetRoot(), scene.GetRoot(), gem.DefaultLayer)
+		gem.Append(gem.GetRoot(), scene.GetRoot())
 		scene.Init()
 		sm.enabled_scenes[name] = true
 	}
@@ -69,7 +56,7 @@ func DisableScene(name string) {
 	// De-initialize the scene if it's currently enabled
 	if sm.enabled_scenes[name] {
 		scene.Deinit()
-		gem.RemoveEntity(scene.GetRoot())
+		gem.Remove(scene.GetRoot())
 		sm.enabled_scenes[name] = false
 	}
 }
@@ -79,7 +66,7 @@ func DisableAllScenes() {
 	for name, _ := range sm.scenes {
 		if sm.enabled_scenes[name] {
 			sm.scenes[name].Deinit()
-			gem.RemoveEntity(sm.scenes[name].GetRoot())
+			gem.Remove(sm.scenes[name].GetRoot())
 			sm.enabled_scenes[name] = false
 		}
 	}
@@ -92,24 +79,6 @@ func DisableAllScenesExcept(exception_slice []string) {
 		if sm.enabled_scenes[name] && !util.SliceContains(exception_slice, name) {
 			sm.scenes[name].Deinit()
 			sm.enabled_scenes[name] = false
-		}
-	}
-}
-
-// Calls the Update() functions of all the registered Scenes
-func UpdateScenes() {
-	for name, _ := range sm.scenes {
-		if sm.enabled_scenes[name] {
-			sm.scenes[name].Update()
-		}
-	}
-}
-
-// Calls the FixedUpdate() functions of all the registered Scenes
-func FixedUpdateScenes() {
-	for name, _ := range sm.scenes {
-		if sm.enabled_scenes[name] {
-			sm.scenes[name].FixedUpdate()
 		}
 	}
 }
