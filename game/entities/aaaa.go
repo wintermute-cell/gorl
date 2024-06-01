@@ -12,17 +12,15 @@ var _ entities.IEntity = &TemplateEntity{}
 
 // Template Entity
 type TemplateEntity struct {
-	*entities.Entity // Required!
+	// Required fields
+	*entities.Entity
 
 	// Custom Fields
 	// Add fields here for any state that the entity should keep track of
 	// ...
 }
 
-// NewTemplateEntity creates a new instance of the TemplateEntity.
 func NewTemplateEntity(position rl.Vector2, rotation float32, scale rl.Vector2) *TemplateEntity {
-	// NOTE: you can modify the constructor to take any parameters you need to
-	// initialize the entity.
 	new_ent := &TemplateEntity{
 		Entity: entities.NewEntity("TemplateEntity", position, rotation, scale),
 
@@ -43,7 +41,7 @@ func (ent *TemplateEntity) Deinit() {
 }
 
 func (ent *TemplateEntity) Update() {
-	// Update logic for the entity per frame
+	// Update logic for the entity
 	// ...
 }
 

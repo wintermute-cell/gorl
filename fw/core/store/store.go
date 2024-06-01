@@ -14,24 +14,35 @@ var globalStore = newStore()
 
 // newStore creates a new instance of Store.
 func newStore() *store {
-	return &store{
+	s := &store{
 		data: make(map[reflect.Type]interface{}),
 	}
+
+	// Add premade stored types.
+	// These should always be present in the store.
+	addPremade(NewAppState(), s)
+
+	return s
 }
 
 // Add adds or replaces a value in the store keyed by its type.
 func Add[T any](value T) {
-	typ := reflect.TypeOf(value)
-	globalStore.data[typ] = value
+	t := reflect.TypeOf(value)
+	globalStore.data[t] = value
 }
 
 // Get retrieves a value from the store by its type. It returns the value and a
 // boolean indicating if it was found.
 func Get[T any]() (T, bool) {
-	typ := reflect.TypeOf((*T)(nil)).Elem()
-	v, ok := globalStore.data[typ]
+	t := reflect.TypeOf((*T)(nil)).Elem()
+	v, ok := globalStore.data[t]
 	if !ok {
 		return *new(T), false
 	}
 	return v.(T), true
+}
+
+func addPremade[T any](value T, s *store) {
+	t := reflect.TypeOf(value)
+	s.data[t] = value
 }

@@ -1,30 +1,29 @@
 package input
 
 import (
-	"gorl/fw/core/entities/proto"
 	input "gorl/fw/core/input/input_event"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+// InputReceiver is an interface that should be implemented by any object that
+// is intended to receive input events.
+type InputReceiver interface {
+	OnInputEvent(event *input.InputEvent) bool
+}
+
 // HandleInputEvents checks for input events and propagates them to the entities.
 // Receives a sorted slice of layers, each containing a slice of entities.
 // Both must be sorted from back to front (from far away to close to camera).
-func HandleInputEvents(orderedEntities [][]proto.IEntity) {
+func HandleInputEvents(inputReceivers []InputReceiver) {
+	// TODO: since therea re no more layers, ths makes no sense. rewrite.
 	events := checkForInputs()
 	for _, event := range events {
-	entities: // stop iterating over all entitie if one blocks propagation.
-		//for _, layer := range orderedEntities {
-		//	for _, entity := range layer {
-		// iterate in reverse
-		for i := len(orderedEntities) - 1; i >= 0; i-- {
-			layer := orderedEntities[i]
-			for j := len(layer) - 1; j >= 0; j-- {
-				entity := layer[j]
-				shouldContinue := entity.OnInputEvent(event)
-				if !shouldContinue {
-					break entities
-				}
+		// walk backwards so that the front-most entities receive the input first
+		for i := len(inputReceivers) - 1; i >= 0; i-- {
+			shouldContinue := inputReceivers[i].OnInputEvent(event)
+			if !shouldContinue {
+				break
 			}
 		}
 	}
