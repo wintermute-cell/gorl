@@ -16,4 +16,5 @@ func Init() {
 	// NOTE: hier szenen initialisieren
 	scenes.RegisterScene("flow field", &gsc.FlowFieldScene{})
 	scenes.EnableScene("flow field")
+
 }
