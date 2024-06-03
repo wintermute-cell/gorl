@@ -52,14 +52,6 @@ func (ent *CameraEntity) Deinit() {
 
 func (ent *CameraEntity) Update() {
 
-	// sine oscillation in y axis
-	ent.SetPosition(
-		rl.NewVector2(
-			ent.GetPosition().X,
-			ent.GetPosition().Y+rl.GetFrameTime()*4,
-		),
-	)
-
 	// 1. Apply the absolute transform of the camera entity to the render camera.
 	absTransform := gem.GetAbsoluteTransform(ent)
 	ent.camera.SetTarget(absTransform.GetPosition())

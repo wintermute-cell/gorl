@@ -10,9 +10,11 @@ const (
 	ActionMoveDown
 	ActionMoveLeft
 	ActionMoveRight
+	ActionPlaceObstacle
 	ActionClickDown
 	ActionClickHeld
 	ActionClickUp
+	ActionClickRightHeld
 	ActionMouseHover
 	ActionEscape
 	// Add other actions as needed
@@ -31,6 +33,9 @@ var ActionMap = map[Action][]Trigger{
 	ActionMoveRight: {
 		{InputType: InputTypeKey, TriggerType: TriggerTypeDown, Key: rl.KeyD},
 	},
+	ActionPlaceObstacle: {
+		{InputType: InputTypeKey, TriggerType: TriggerTypeDown, Key: rl.KeyO},
+	},
 	ActionClickDown: {
 		{InputType: InputTypeMouse, TriggerType: TriggerTypePressed, MouseButton: rl.MouseLeftButton},
 	},
@@ -39,6 +44,9 @@ var ActionMap = map[Action][]Trigger{
 	},
 	ActionClickUp: {
 		{InputType: InputTypeMouse, TriggerType: TriggerTypeReleased, MouseButton: rl.MouseLeftButton},
+	},
+	ActionClickRightHeld: {
+		{InputType: InputTypeMouse, TriggerType: TriggerTypeDown, MouseButton: rl.MouseRightButton},
 	},
 	ActionMouseHover: {
 		{InputType: InputTypeMouse, TriggerType: TriggerTypePassive},
