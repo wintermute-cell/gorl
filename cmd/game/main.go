@@ -135,18 +135,6 @@ func main() {
 	)
 	gem.Append(gem.GetRoot(), cameraEntity)
 
-	testEntities := []*entities.TemplateEntity{}
-	for i := 0; i < 4; i++ {
-		testEntities = append(testEntities, entities.NewTemplateEntity(
-			rl.NewVector2(float32(i), float32(i)),
-			0,
-			rl.NewVector2(1, 1),
-		))
-		gem.Append(gem.GetRoot(), testEntities[i])
-	}
-
-	// gem.AddEntity(gem.GetRoot(), button2, gem.DefaultLayer)
-
 	for !shouldExit {
 		frameStart = time.Now()
 

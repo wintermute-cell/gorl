@@ -1,8 +1,8 @@
 {
     "Version": "0.0.0",
     "Title": "made with gorl",
-    "ScreenWidth": 960,
-    "ScreenHeight": 540,
+    "ScreenWidth": 1820,
+    "ScreenHeight": 980,
     "RenderWidth": 1920,
     "RenderHeight": 1080,
     "TargetFps": 144,

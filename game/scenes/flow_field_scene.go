@@ -21,8 +21,12 @@ type FlowFieldScene struct {
 func (scn *FlowFieldScene) Init() {
 	// Initialization logic for the scene
 	// ...
-	ggEnt := entities.NewGridGraphEntity()
-	gem.Append(scn.GetRoot(), ggEnt)
+
+	// ggEnt := entities.NewGridGraphEntity()
+	// gem.Append(scn.GetRoot(), ggEnt)
+
+	mapEnt := entities.NewAnimMapToFfEntity()
+	gem.Append(scn.GetRoot(), mapEnt)
 }
 
 func (scn *FlowFieldScene) Deinit() {
