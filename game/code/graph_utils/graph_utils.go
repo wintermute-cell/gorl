@@ -1,4 +1,4 @@
-package graphutils
+package graph_utils
 
 import (
 	"image/color"
@@ -44,7 +44,7 @@ func CalculateGridGraphImage(mapImage *rl.Image, tileSize int) []rl.Vector2 {
 				}
 			}
 			if whiteCount <= blackCount {
-				gridGraphObstacles = append(gridGraphObstacles, rl.NewVector2(float32(x), float32(y)))
+				gridGraphObstacles = append(gridGraphObstacles, rl.NewVector2(float32(y), float32(x)))
 			}
 		}
 	}
