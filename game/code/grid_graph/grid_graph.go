@@ -1,6 +1,7 @@
 package grid_graph
 
 import (
+	"fmt"
 	"gorl/fw/core/logging"
 	"image/color"
 	"math"
@@ -219,9 +220,44 @@ func (gg *GridGraph) Dijkstra(target Coordinate) {
 	}
 }
 
+// The Dijkstra algorithm can only calculate the distance to the target if it is reachable, if a tile can
+// not reach the target, the algorithm will fail. Call this function before Dijkstra to ensure that unreachable
+// tiles will be removed (set as an obstacle).
+func (gg *GridGraph) RemoveUnreachableTiles(position Coordinate) {
+	// TODO: REWORK
+	reachableNodes := make(map[Coordinate]*Vertex)
+	nodesToVisit := make(map[Coordinate]*Vertex)
+	visitedNodes := make(map[Coordinate]*Vertex)
+	// initially add the starting position to the nodesToVisit
+
+	nodesToVisit[position] = gg.VertexMap[position]
+
+	for len(nodesToVisit) > 0 {
+		fmt.Println("inside the loop, nodetovisitlen:", len(nodesToVisit))
+		// adds all the neighbours of the current position to the reachable nodes...
+		for _, nVert := range gg.VertexMap[position].Neighbours {
+			//... but only if they are not already in there
+			if _, ok := reachableNodes[nVert.Coordinate]; !ok {
+				reachableNodes[nVert.Coordinate] = nVert
+			}
+			// every neighbouring node that was not yet visited...
+			if _, ok := visitedNodes[nVert.Coordinate]; !ok {
+				// and is not in the nodesToVisit list already, needs to be added to it
+				if _, ok := nodesToVisit[nVert.Coordinate]; !ok {
+					nodesToVisit[nVert.Coordinate] = nVert
+				}
+			}
+			// finally we add a done node to the visitedNodes, and remove it from the nodesToVisit
+			visitedNodes[nVert.Coordinate] = nVert
+			delete(nodesToVisit, nVert.Coordinate)
+		}
+	}
+	gg.VertexMap = reachableNodes
+}
+
 // Sets an "obstacle" in the graph. Basically removes a vertex from the grid graph
 func (gg *GridGraph) SetObstacle(position Coordinate) {
-	// check if position is (stillt) in the grid graph
+	// check if position is (still) in the grid graph
 	if vert, ok := gg.VertexMap[position]; ok {
 		// remove the vert from its neighbours
 		for _, nVert := range vert.Neighbours {
@@ -238,7 +274,7 @@ func (gg *GridGraph) SetObstacle(position Coordinate) {
 // Takes an black/white image and converts it into a silce of vectors which
 // repres a grid graph. The slice contains only the obstacles, it is implied
 // that every tile that is not declared an obstacle is a movable tile
-func CalculateGridGraphFromImage(mapImage *rl.Image, tileSize int) []rl.Vector2 {
+func (gg *GridGraph) CalculateGridGraphFromImage(mapImage *rl.Image, tileSize int) {
 	// this is a one dimensional array
 	imgColors := rl.LoadImageColors(mapImage)
 	var gridGraphObstacles []rl.Vector2
@@ -277,5 +313,7 @@ func CalculateGridGraphFromImage(mapImage *rl.Image, tileSize int) []rl.Vector2 
 			}
 		}
 	}
-	return gridGraphObstacles
+	for _, ob := range gridGraphObstacles {
+		gg.SetObstacle(Coordinate{X: int(ob.X), Y: int(ob.Y)})
+	}
 }

@@ -3,7 +3,6 @@ package entities
 import (
 	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_event"
-	"gorl/fw/core/logging"
 	"gorl/game/code/grid_graph"
 	"math"
 	"strconv"
@@ -39,11 +38,9 @@ func (ent *GridGraphEntity) Init() {
 
 	mapImage := rl.LoadImage("./map_thresh.png")
 	ent.gg = grid_graph.NewGridGraph(48, 27)
-	for _, ob := range grid_graph.CalculateGridGraphImage(mapImage, 40) {
-		logging.Debug("obstacles at:", ob)
-		ent.gg.SetObstacle(grid_graph.Coordinate{X: int(ob.X), Y: int(ob.Y)})
-	}
-	// ent.gg.Dijkstra(Coordinate{0, 0})
+	ent.gg.CalculateGridGraphFromImage(mapImage, 40)
+	ent.gg.RemoveUnreachableTiles(grid_graph.Coordinate{X: 10, Y: 0})
+	// ent.gg.Dijkstra(grid_graph.Coordinate{X: 10, Y: 0})
 }
 
 func (ent *GridGraphEntity) Deinit() {
