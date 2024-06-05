@@ -107,18 +107,27 @@ func (ent *AnimMapToFfEntity) Draw() {
 	if ent.sclSec > 10000 {
 		for i := range 50 {
 			for j := range 50 {
-				rl.DrawLine(
-					int32(i*ent.TileSize-20),
-					int32(j*ent.TileSize-20),
-					int32(i*ent.TileSize+2000),
-					int32(j*ent.TileSize-20),
-					rl.NewColor(0, 0, 255, uint8(ent.faderEdges)),
-				)
+				// rl.DrawLine(
+				// 	int32(i*ent.TileSize-20),
+				// 	int32(j*ent.TileSize-20),
+				// 	int32(i*ent.TileSize+2000),
+				// 	int32(j*ent.TileSize-20),
+				// 	rl.NewColor(0, 0, 255, uint8(ent.faderEdges)),
+				// )
+				//
 				rl.DrawLine(
 					int32(i*ent.TileSize-20),
 					int32(j*ent.TileSize-20),
 					int32(i*ent.TileSize-20),
 					int32(j*ent.TileSize+2000),
+					rl.NewColor(0, 0, 255, uint8(ent.faderEdges)),
+				)
+				// top left to bottom right
+				rl.DrawLine(
+					int32(i*ent.TileSize-20),
+					int32(i*ent.TileSize-20),
+					int32(i*ent.TileSize+2000),
+					int32(i*ent.TileSize+2000),
 					rl.NewColor(0, 0, 255, uint8(ent.faderEdges)),
 				)
 			}
