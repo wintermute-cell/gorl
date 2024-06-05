@@ -4,6 +4,7 @@ import (
 	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_event"
 	"gorl/fw/core/logging"
+	graphutils "gorl/game/code/graph_utils"
 	"math"
 	"slices"
 	"strconv"
@@ -29,8 +30,6 @@ func NewGridGraphEntity() *GridGraphEntity {
 		Entity:   entities.NewEntity("GridGraphEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
 		gg:       NewGridGraph(100, 100),
 		TextSize: 20,
-		// Initialize custom fields here
-		// ...
 	}
 	return new_ent
 }
@@ -39,7 +38,13 @@ func (ent *GridGraphEntity) Init() {
 	// Initialization logic for the entity
 	// ...
 
-	ent.gg.Dijkstra(Coordinate{0, 0})
+	mapImage := rl.LoadImage("./map_thresh.png")
+	ent.gg = NewGridGraph(48, 27)
+	for _, ob := range graphutils.CalculateGridGraphImage(mapImage, 40) {
+		logging.Debug("obstacles at:", ob)
+		ent.gg.SetObstacle(Coordinate{X: int(ob.X), Y: int(ob.Y)})
+	}
+	// ent.gg.Dijkstra(Coordinate{0, 0})
 }
 
 func (ent *GridGraphEntity) Deinit() {

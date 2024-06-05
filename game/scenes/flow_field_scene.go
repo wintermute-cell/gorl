@@ -22,11 +22,12 @@ func (scn *FlowFieldScene) Init() {
 	// Initialization logic for the scene
 	// ...
 
-	// ggEnt := entities.NewGridGraphEntity()
-	// gem.Append(scn.GetRoot(), ggEnt)
-
 	mapEnt := entities.NewAnimMapToFfEntity()
 	gem.Append(scn.GetRoot(), mapEnt)
+
+	ggEnt := entities.NewGridGraphEntity()
+	gem.Append(scn.GetRoot(), ggEnt)
+
 }
 
 func (scn *FlowFieldScene) Deinit() {
