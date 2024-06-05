@@ -41,7 +41,6 @@ func (ent *AnimMapToFfEntity) Init() {
 	ent.faderGrid = 255
 	ent.faderNodes = 0
 	ent.faderEdges = 0
-	// TODO: set this to the grid graph
 }
 
 func (ent *AnimMapToFfEntity) Deinit() {

@@ -70,7 +70,6 @@ func (ent *GridGraphEntity) Draw() {
 		rl.Black,
 	)
 	for _, vertex := range ent.gg.VertexMap {
-		// TODO: determine vertex color
 		sclColorVal := vertex.Distance * 20
 		var vertexColor rl.Color
 		if sclColorVal <= 255 {
