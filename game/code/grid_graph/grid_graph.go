@@ -238,7 +238,7 @@ func (gg *GridGraph) SetObstacle(position Coordinate) {
 // Takes an black/white image and converts it into a silce of vectors which
 // repres a grid graph. The slice contains only the obstacles, it is implied
 // that every tile that is not declared an obstacle is a movable tile
-func CalculateGridGraphImage(mapImage *rl.Image, tileSize int) []rl.Vector2 {
+func CalculateGridGraphFromImage(mapImage *rl.Image, tileSize int) []rl.Vector2 {
 	// this is a one dimensional array
 	imgColors := rl.LoadImageColors(mapImage)
 	var gridGraphObstacles []rl.Vector2
