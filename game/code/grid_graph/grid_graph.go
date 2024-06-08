@@ -1,7 +1,6 @@
 package grid_graph
 
 import (
-	"fmt"
 	"gorl/fw/core/logging"
 	"image/color"
 	"math"
@@ -142,6 +141,10 @@ func NewGridGraph(width int, height int) *GridGraph {
 	return &gridGraph
 }
 
+// Runs the dijkstra algorithm for the tile at target. It calculates the distance
+// of all other tiles to the target. The algorithm will fail, if there are
+// encircled tiles present. Call RemoveUnreachableTiles to avoid that problem
+// and declare these encircled paths as obstacles.
 func (gg *GridGraph) Dijkstra(target Coordinate) {
 	// Only run the algorithm if therp is a target
 	if targetVertex, ok := gg.VertexMap[target]; ok {
@@ -222,37 +225,43 @@ func (gg *GridGraph) Dijkstra(target Coordinate) {
 
 // The Dijkstra algorithm can only calculate the distance to the target if it is reachable, if a tile can
 // not reach the target, the algorithm will fail. Call this function before Dijkstra to ensure that unreachable
-// tiles will be removed (set as an obstacle).
+// tiles will be removed (set as an obstacle), to avoid this fail.
 func (gg *GridGraph) RemoveUnreachableTiles(position Coordinate) {
-	// TODO: REWORK
-	reachableNodes := make(map[Coordinate]*Vertex)
-	nodesToVisit := make(map[Coordinate]*Vertex)
-	visitedNodes := make(map[Coordinate]*Vertex)
+	// nodes that are connectet to position
+	var reachableNodes []*Vertex
+	// nodes that are neighbours of the current node, but not yet completely checked
+	var nodesToCheck []*Vertex
+	// completely checked nodes
+	var checkedNodes []*Vertex
+
 	// initially add the starting position to the nodesToVisit
+	nodesToCheck = append(nodesToCheck, gg.VertexMap[position])
 
-	nodesToVisit[position] = gg.VertexMap[position]
+	for len(nodesToCheck) > 0 {
+		currentNode := nodesToCheck[0]
+		// adds the neighbours of the current position to the nodesToCheck...
+		for _, nVert := range currentNode.Neighbours {
+			//... but only if they are not already checked and not queued to be checked
+			if !slices.Contains(checkedNodes, nVert) && !slices.Contains(nodesToCheck, nVert) {
+				nodesToCheck = append(nodesToCheck, nVert)
+			}
 
-	for len(nodesToVisit) > 0 {
-		fmt.Println("inside the loop, nodetovisitlen:", len(nodesToVisit))
-		// adds all the neighbours of the current position to the reachable nodes...
-		for _, nVert := range gg.VertexMap[position].Neighbours {
-			//... but only if they are not already in there
-			if _, ok := reachableNodes[nVert.Coordinate]; !ok {
-				reachableNodes[nVert.Coordinate] = nVert
-			}
-			// every neighbouring node that was not yet visited...
-			if _, ok := visitedNodes[nVert.Coordinate]; !ok {
-				// and is not in the nodesToVisit list already, needs to be added to it
-				if _, ok := nodesToVisit[nVert.Coordinate]; !ok {
-					nodesToVisit[nVert.Coordinate] = nVert
-				}
-			}
-			// finally we add a done node to the visitedNodes, and remove it from the nodesToVisit
-			visitedNodes[nVert.Coordinate] = nVert
-			delete(nodesToVisit, nVert.Coordinate)
+		}
+		// if we are done with adding nodes to be checked, we add this node to the reachableNodes
+		// and the checkedNodes, and remove it from nodesToCheck
+		reachableNodes = append(reachableNodes, currentNode)
+		checkedNodes = append(checkedNodes, currentNode)
+		// deletes currentNode from nodesToCheck
+		index := slices.Index(nodesToCheck, currentNode)
+		if index != -1 {
+			nodesToCheck = slices.Delete(nodesToCheck, index, index+1)
 		}
 	}
-	gg.VertexMap = reachableNodes
+	newVertexMap := make(map[Coordinate]*Vertex)
+	for _, vert := range reachableNodes {
+		newVertexMap[vert.Coordinate] = vert
+	}
+	gg.VertexMap = newVertexMap
 }
 
 // Sets an "obstacle" in the graph. Basically removes a vertex from the grid graph
