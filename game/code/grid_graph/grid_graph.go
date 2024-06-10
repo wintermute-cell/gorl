@@ -4,6 +4,7 @@ import (
 	"gorl/fw/core/logging"
 	"image/color"
 	"math"
+	"math/rand"
 	"slices"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -238,7 +239,7 @@ func (gg *GridGraph) Dijkstra(target Coordinate) {
 // reached the target
 func (gg *GridGraph) MoveRobotsToTarget() {
 	for _, robot := range gg.Robots {
-		// check if we are at the target
+		// check if we are at the target already, if yes, then skip
 		if gg.VertexMap[robot.Coords].Distance == 0 {
 			continue
 		}
@@ -247,11 +248,24 @@ func (gg *GridGraph) MoveRobotsToTarget() {
 		smallestDistance := math.MaxInt
 		// find smallest distance and corresponding vert
 		for _, nVert := range neighbours {
+			// check for smaller distance
 			if nVert.Distance < smallestDistance {
-				smallestDistance = nVert.Distance
-				closestNeighbour = nVert
+				// if another robot is on the tile already, skip this one (flag it)
+				continueFlag := false
+				for _, rob := range gg.Robots {
+					if nVert.Coordinate == rob.Coords {
+						continueFlag = true
+					}
+				}
+				// only set the tile as closets neighbour if it wasn flagged
+				if !continueFlag {
+					smallestDistance = nVert.Distance
+					closestNeighbour = nVert
+				}
 			}
 		}
+
+		// set robot to new position
 		if closestNeighbour != nil {
 			robot.Coords = closestNeighbour.Coordinate
 		}
@@ -260,7 +274,12 @@ func (gg *GridGraph) MoveRobotsToTarget() {
 
 // Adds a robot to the graph
 func (gg *GridGraph) AddRobot(position Coordinate) {
-	newRobot := &Robot{position, rl.Green}
+	robotColor := rl.NewColor(
+		uint8(rand.Int()%256),
+		uint8(rand.Int()%256),
+		uint8(rand.Int()%256),
+		255)
+	newRobot := &Robot{position, robotColor}
 	gg.Robots[len(gg.Robots)] = newRobot
 }
 

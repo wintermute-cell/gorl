@@ -19,6 +19,9 @@ type GridGraphEntity struct {
 	*entities.Entity // Required!
 	gg               *grid_graph.GridGraph
 	TextSize         int32
+
+	// NOTE: WORKAROUND FOR DOUBLE INPUT CALLING
+	inputCounter int
 }
 
 // NewGridGraphEntity creates a new instance of the GridGraphEntity.
@@ -140,7 +143,7 @@ func (ent *GridGraphEntity) Draw() {
 			int32(int32(robot.Coords.X)*ent.gg.TileSize+ent.gg.TileSize/2),
 			int32(int32(robot.Coords.Y)*ent.gg.TileSize+ent.gg.TileSize/2),
 			10,
-			rl.Green,
+			robot.Color,
 		)
 	}
 }
@@ -170,13 +173,21 @@ func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
 	}
 	if event.Action == input.ActionMoveRobotsToTarget {
 		// NOTE: warum wird das immer zweimal gecallet?
-		fmt.Println("moving called")
-		ent.gg.MoveRobotsToTarget()
+		ent.inputCounter++
+		if ent.inputCounter >= 2 {
+			fmt.Println("moving called")
+			ent.gg.MoveRobotsToTarget()
+			ent.inputCounter = 0
+		}
 	}
 	if event.Action == input.ActionPlaceRobot {
 		// NOTE: warum wird das immer zweimal gecallet?
-		fmt.Println("placeing robot")
-		ent.gg.AddRobot(sclCoord)
+		ent.inputCounter++
+		if ent.inputCounter >= 2 {
+			fmt.Println("placeing robot")
+			ent.gg.AddRobot(sclCoord)
+			ent.inputCounter = 0
+		}
 	}
 	return true
 }
