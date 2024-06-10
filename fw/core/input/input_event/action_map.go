@@ -11,6 +11,8 @@ const (
 	ActionMoveLeft
 	ActionMoveRight
 	ActionPlaceObstacle
+	ActionMoveRobotsToTarget
+	ActionPlaceRobot
 	ActionClickDown
 	ActionClickHeld
 	ActionClickUp
@@ -35,6 +37,12 @@ var ActionMap = map[Action][]Trigger{
 	},
 	ActionPlaceObstacle: {
 		{InputType: InputTypeKey, TriggerType: TriggerTypeDown, Key: rl.KeyO},
+	},
+	ActionMoveRobotsToTarget: {
+		{InputType: InputTypeKey, TriggerType: TriggerTypeReleased, Key: rl.KeyM},
+	},
+	ActionPlaceRobot: {
+		{InputType: InputTypeKey, TriggerType: TriggerTypeReleased, Key: rl.KeyP},
 	},
 	ActionClickDown: {
 		{InputType: InputTypeMouse, TriggerType: TriggerTypePressed, MouseButton: rl.MouseLeftButton},

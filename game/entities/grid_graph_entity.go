@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"fmt"
 	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_event"
 	"gorl/game/code/grid_graph"
@@ -40,7 +41,7 @@ func (ent *GridGraphEntity) Init() {
 	ent.gg = grid_graph.NewGridGraph(48, 27)
 	ent.gg.CalculateGridGraphFromImage(mapImage, 40)
 	ent.gg.RemoveUnreachableTiles(grid_graph.Coordinate{X: 10, Y: 0})
-	// ent.gg.Dijkstra(grid_graph.Coordinate{X: 10, Y: 0})
+	ent.gg.Dijkstra(grid_graph.Coordinate{X: 10, Y: 0})
 }
 
 func (ent *GridGraphEntity) Deinit() {
@@ -54,8 +55,6 @@ func (ent *GridGraphEntity) Update() {
 }
 
 func (ent *GridGraphEntity) Draw() {
-	// Draw logic for the entity
-	// ...
 	// Draw vertices
 	rl.DrawRectangleV(
 		ent.GetPosition(),
@@ -65,6 +64,7 @@ func (ent *GridGraphEntity) Draw() {
 		),
 		rl.Black,
 	)
+	// TODO: put this in a vertex.GetColor() function
 	for _, vertex := range ent.gg.VertexMap {
 		sclColorVal := vertex.Distance * 20
 		var vertexColor rl.Color
@@ -134,6 +134,15 @@ func (ent *GridGraphEntity) Draw() {
 			rl.Black,
 		)
 	}
+	// draw the robots
+	for _, robot := range ent.gg.Robots {
+		rl.DrawCircle(
+			int32(int32(robot.Coords.X)*ent.gg.TileSize+ent.gg.TileSize/2),
+			int32(int32(robot.Coords.Y)*ent.gg.TileSize+ent.gg.TileSize/2),
+			10,
+			rl.Green,
+		)
+	}
 }
 
 func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
@@ -158,6 +167,16 @@ func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
 	}
 	if event.Action == input.ActionPlaceObstacle {
 		ent.gg.SetObstacle(sclCoord)
+	}
+	if event.Action == input.ActionMoveRobotsToTarget {
+		// NOTE: warum wird das immer zweimal gecallet?
+		fmt.Println("moving called")
+		ent.gg.MoveRobotsToTarget()
+	}
+	if event.Action == input.ActionPlaceRobot {
+		// NOTE: warum wird das immer zweimal gecallet?
+		fmt.Println("placeing robot")
+		ent.gg.AddRobot(sclCoord)
 	}
 	return true
 }

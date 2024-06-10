@@ -25,6 +25,7 @@ type GridGraph struct {
 	VertexMap  map[Coordinate]*Vertex
 	TileSize   int32
 	DrawOffset rl.Vector2
+	Robots     map[int]*Robot // index - robot
 }
 
 // A Vertex is a node that belongs to a graph and can have an arbitrary number
@@ -46,6 +47,12 @@ type Coordinate struct {
 	Y int
 }
 
+// robot
+type Robot struct {
+	Coords Coordinate
+	Color  rl.Color
+}
+
 // Builds a new Grid Graph in the given dimensions
 func NewGridGraph(width int, height int) *GridGraph {
 	logging.Info(">> graph.go: constructing new grid graph")
@@ -55,6 +62,7 @@ func NewGridGraph(width int, height int) *GridGraph {
 	gridGraph.VertexMap = make(map[Coordinate]*Vertex)
 	gridGraph.DrawOffset = rl.Vector2Zero()
 	gridGraph.TileSize = 40
+	gridGraph.Robots = make(map[int]*Robot)
 	// Loop width and height for initializing the array.
 	for x := range width {
 		for y := range height {
@@ -138,6 +146,8 @@ func NewGridGraph(width int, height int) *GridGraph {
 			}
 		}
 	}
+	// NOTE: just a sample robot
+	gridGraph.Robots[0] = &Robot{Coordinate{X: 20, Y: 20}, rl.Green}
 	return &gridGraph
 }
 
@@ -221,6 +231,37 @@ func (gg *GridGraph) Dijkstra(target Coordinate) {
 		}
 
 	}
+}
+
+// Moves every robot one tile closer to the target by checking their neighbours
+// distance and moving towards the lowest one, if there is none, the robot has
+// reached the target
+func (gg *GridGraph) MoveRobotsToTarget() {
+	for _, robot := range gg.Robots {
+		// check if we are at the target
+		if gg.VertexMap[robot.Coords].Distance == 0 {
+			continue
+		}
+		neighbours := gg.VertexMap[robot.Coords].Neighbours
+		var closestNeighbour *Vertex
+		smallestDistance := math.MaxInt
+		// find smallest distance and corresponding vert
+		for _, nVert := range neighbours {
+			if nVert.Distance < smallestDistance {
+				smallestDistance = nVert.Distance
+				closestNeighbour = nVert
+			}
+		}
+		if closestNeighbour != nil {
+			robot.Coords = closestNeighbour.Coordinate
+		}
+	}
+}
+
+// Adds a robot to the graph
+func (gg *GridGraph) AddRobot(position Coordinate) {
+	newRobot := &Robot{position, rl.Green}
+	gg.Robots[len(gg.Robots)] = newRobot
 }
 
 // The Dijkstra algorithm can only calculate the distance to the target if it is reachable, if a tile can

@@ -22,8 +22,8 @@ func (scn *FlowFieldScene) Init() {
 	// Initialization logic for the scene
 	// ...
 
-	mapEnt := entities.NewAnimMapToFfEntity()
-	gem.Append(scn.GetRoot(), mapEnt)
+	// mapEnt := entities.NewAnimMapToFfEntity()
+	// gem.Append(scn.GetRoot(), mapEnt)
 
 	ggEnt := entities.NewGridGraphEntity()
 	gem.Append(scn.GetRoot(), ggEnt)
