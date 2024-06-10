@@ -14,8 +14,6 @@ import (
 	"gorl/game"
 	"gorl/game/entities"
 
-	// "gorl/game/entities"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
 
 	"net/http"
