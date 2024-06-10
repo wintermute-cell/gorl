@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"fmt"
 	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_event"
 	"gorl/game/code/grid_graph"
@@ -140,8 +139,8 @@ func (ent *GridGraphEntity) Draw() {
 	// draw the robots
 	for _, robot := range ent.gg.Robots {
 		rl.DrawCircle(
-			int32(int32(robot.Coords.X)*ent.gg.TileSize+ent.gg.TileSize/2),
-			int32(int32(robot.Coords.Y)*ent.gg.TileSize+ent.gg.TileSize/2),
+			int32(int32(robot.Coords.X)*ent.gg.TileSize+ent.gg.TileSize/2)+int32(ent.GetPosition().X),
+			int32(int32(robot.Coords.Y)*ent.gg.TileSize+ent.gg.TileSize/2)+int32(ent.GetPosition().Y),
 			10,
 			robot.Color,
 		)
@@ -175,7 +174,6 @@ func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
 		// NOTE: warum wird das immer zweimal gecallet?
 		ent.inputCounter++
 		if ent.inputCounter >= 2 {
-			fmt.Println("moving called")
 			ent.gg.MoveRobotsToTarget()
 			ent.inputCounter = 0
 		}
@@ -184,7 +182,6 @@ func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
 		// NOTE: warum wird das immer zweimal gecallet?
 		ent.inputCounter++
 		if ent.inputCounter >= 2 {
-			fmt.Println("placeing robot")
 			ent.gg.AddRobot(sclCoord)
 			ent.inputCounter = 0
 		}

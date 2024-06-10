@@ -274,13 +274,16 @@ func (gg *GridGraph) MoveRobotsToTarget() {
 
 // Adds a robot to the graph
 func (gg *GridGraph) AddRobot(position Coordinate) {
-	robotColor := rl.NewColor(
-		uint8(rand.Int()%256),
-		uint8(rand.Int()%256),
-		uint8(rand.Int()%256),
-		255)
-	newRobot := &Robot{position, robotColor}
-	gg.Robots[len(gg.Robots)] = newRobot
+	// check if position is in the grid graph
+	if _, ok := gg.VertexMap[position]; ok {
+		robotColor := rl.NewColor(
+			uint8(rand.Int()%256),
+			uint8(rand.Int()%256),
+			uint8(rand.Int()%256),
+			255)
+		newRobot := &Robot{position, robotColor}
+		gg.Robots[len(gg.Robots)] = newRobot
+	}
 }
 
 // The Dijkstra algorithm can only calculate the distance to the target if it is reachable, if a tile can
