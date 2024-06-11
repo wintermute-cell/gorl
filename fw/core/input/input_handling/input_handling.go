@@ -2,7 +2,6 @@ package input
 
 import (
 	input "gorl/fw/core/input/input_event"
-	"gorl/fw/core/logging"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -21,7 +20,6 @@ func HandleInputEvents(inputReceivers []InputReceiver) {
 	events := checkForInputs()
 	for _, event := range events {
 		// walk backwards so that the front-most entities receive the input first
-		logging.Debug("%v", len(inputReceivers))
 		for i := len(inputReceivers) - 1; i >= 0; i-- {
 			shouldContinue := inputReceivers[i].OnInputEvent(event)
 			if !shouldContinue {
