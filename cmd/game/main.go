@@ -136,20 +136,20 @@ func main() {
 	for !shouldExit {
 		frameStart = time.Now()
 
-		drawables, nonDrawableInputReceivers := gem.Traverse(false) // TODO: add fixed update timing
+		drawables, inputReceivers := gem.Traverse(false) // TODO: add fixed update timing
 
 		//scenes.UpdateScenes() // TODO: rework scenes to be more clear
 		//scenes.FixedUpdateScenes()
 
 		rl.BeginDrawing()
 
-		drawableInputReceivers := render.Draw(drawables)
+		render.Draw(drawables)
 
 		// input is processed at the end of the frame, because here we know in
 		// what order the entities were drawn, and can be sure whatever the
 		// user clicked was really visible at the front.
-		inputEventReceivers := append(nonDrawableInputReceivers, drawableInputReceivers...)
-		input.HandleInputEvents(inputEventReceivers)
+		//inputEventReceivers := append(inputReceivers, drawableInputReceivers...)
+		input.HandleInputEvents(inputReceivers)
 
 		// Draw Debug Info
 		DrawDebugInfo(frameTime)
