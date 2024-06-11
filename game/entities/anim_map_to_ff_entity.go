@@ -64,9 +64,6 @@ func (ent *AnimMapToFfEntity) Update() {
 	if ent.sclSec > 10000 && ent.faderEdges < 255 {
 		ent.faderEdges += 5
 	}
-	// TODO: IDEE: timer und flag abfragen, ob genug zeit fuer die animation vergangen ist
-	// und ob schon die karte erstell wurde (CalculateGridGraphImage gecallt wurde),
-	// dann erstellen, und displayen, machste morgen brudi :)
 }
 
 func (ent *AnimMapToFfEntity) Draw() {

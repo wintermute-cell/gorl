@@ -1,10 +1,9 @@
 package grid_graph
 
 import (
-	"gorl/fw/core/logging"
+	"fmt"
 	"image/color"
 	"math"
-	"math/rand"
 	"slices"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -18,15 +17,15 @@ const (
 )
 
 // A GridGraph is a structure that consists of a set of vertices. NOTE: other graphs need edges, only a grid graph has them implicitly!
+// TODO: move robots in own entity, the grid graph should only tell you what direction you should go
 type GridGraph struct {
 	// Vertices  []*Vertex NOTE: because I only need a grid graph that has coordinates, the vertices[] are not needed,
 	// NOTE: they are included in the VertexMap
 	Width      int
 	Height     int
-	VertexMap  map[Coordinate]*Vertex
+	VertexMap  map[rl.Vector2]*Vertex
 	TileSize   int32
 	DrawOffset rl.Vector2
-	Robots     map[int]*Robot // index - robot
 }
 
 // A Vertex is a node that belongs to a graph and can have an arbitrary number
@@ -34,7 +33,7 @@ type GridGraph struct {
 type Vertex struct {
 	// NOTE: the coordinates are just inside the Vertex struct for convenience, because for now I only need a grid graph.
 	// in a real arbitrary graph there is no "Coordinate", thus it has to be removed in a proper implementation
-	Coordinate       Coordinate
+	Coordinate       rl.Vector2
 	Neighbours       []*Vertex
 	Distance         int
 	DijkstraColor    string
@@ -42,34 +41,18 @@ type Vertex struct {
 	ClosestNeighbour *Vertex
 }
 
-// This is basically a Vector2 with int components
-type Coordinate struct {
-	X int
-	Y int
-}
-
-// robot
-type Robot struct {
-	Coords Coordinate
-	Color  rl.Color
-	//====== for smooth movement
-	Direction rl.Vector2
-}
-
 // Builds a new Grid Graph in the given dimensions
 func NewGridGraph(width int, height int) *GridGraph {
-	logging.Info(">> graph.go: constructing new grid graph")
 	gridGraph := GridGraph{}
 	gridGraph.Width = width
 	gridGraph.Height = height
-	gridGraph.VertexMap = make(map[Coordinate]*Vertex)
+	gridGraph.VertexMap = make(map[rl.Vector2]*Vertex)
 	gridGraph.DrawOffset = rl.Vector2Zero()
 	gridGraph.TileSize = 40
-	gridGraph.Robots = make(map[int]*Robot)
 	// Loop width and height for initializing the array.
 	for x := range width {
 		for y := range height {
-			newCoord := Coordinate{x, y}
+			newCoord := rl.NewVector2(float32(x), float32(y))
 			newVertex := &Vertex{}
 			newVertex.Coordinate = newCoord
 			newVertex.Distance = math.MaxInt
@@ -87,70 +70,68 @@ func NewGridGraph(width int, height int) *GridGraph {
 			// for simplicity and readybility we check all 4 corners seperately
 			// after that, we check the border vertecies, if no condition
 			// applies, a vertex has 4 neighbours
-			vertex := gridGraph.VertexMap[Coordinate{x, y}]
+			vertex := gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y))]
 			if x == 0 && y == 0 {
 				// edge case top left
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y + 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y + 1}])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y+1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y+1))])
 			} else if x == 0 && y == height-1 {
 				// edge case bottom left
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y - 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y - 1}])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y-1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y-1))])
 			} else if x == width-1 && y == 0 {
 				// edge case top right
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y + 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y + 1}])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y+1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y+1))])
 			} else if x == width-1 && y == height-1 {
 				// edge case bottom right
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y - 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y - 1}])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y-1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y-1))])
 			} else if x == 0 {
 				// edge case left
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y - 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y + 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y + 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y - 1}])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y-1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y+1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y+1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y-1))])
 			} else if x == width-1 {
 				// edge case right
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y + 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y - 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y + 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y - 1}])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y+1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y-1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y+1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y-1))])
 			} else if y == 0 {
 				// edge case top
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y + 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y + 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y + 1}])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y+1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y+1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y+1))])
 			} else if y == height-1 {
 				// edge case bottom
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y - 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y - 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y - 1}])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y-1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y-1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y-1))])
 			} else {
 				// all vertices in the "middle" of the graph
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y - 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x, y + 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y - 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y + 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x - 1, y + 1}])
-				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[Coordinate{x + 1, y - 1}])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y-1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x), float32(y+1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y-1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y+1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x-1), float32(y+1))])
+				vertex.Neighbours = append(vertex.Neighbours, gridGraph.VertexMap[rl.NewVector2(float32(x+1), float32(y-1))])
 			}
 		}
 	}
-	// NOTE: just a sample robot
-	gridGraph.Robots[0] = &Robot{Coordinate{X: 20, Y: 20}, rl.Green, rl.Vector2Zero()}
 	return &gridGraph
 }
 
@@ -158,9 +139,12 @@ func NewGridGraph(width int, height int) *GridGraph {
 // of all other tiles to the target. The algorithm will fail, if there are
 // encircled tiles present. Call RemoveUnreachableTiles to avoid that problem
 // and declare these encircled paths as obstacles.
-func (gg *GridGraph) Dijkstra(target Coordinate) {
+func (gg *GridGraph) Dijkstra(target rl.Vector2) {
+	// target is a raw mouse position, we need to cast it to an int
+	fmt.Println("target:", target)
+	targetScaled := rl.NewVector2(float32(int(target.X)), float32(int(target.Y)))
 	// Only run the algorithm if therp is a target
-	if targetVertex, ok := gg.VertexMap[target]; ok {
+	if targetVertex, ok := gg.VertexMap[targetScaled]; ok {
 		// reset dijkstra color, distance, predecessor and closest neighbour
 		for _, vertex := range gg.VertexMap {
 			vertex.Distance = math.MaxInt
@@ -173,7 +157,7 @@ func (gg *GridGraph) Dijkstra(target Coordinate) {
 		targetVertex.Distance = 0
 
 		// copy VertexMap
-		remainingGraphMap := make(map[Coordinate]*Vertex)
+		remainingGraphMap := make(map[rl.Vector2]*Vertex)
 		for k, v := range gg.VertexMap {
 			remainingGraphMap[k] = v
 		}
@@ -210,11 +194,11 @@ func (gg *GridGraph) Dijkstra(target Coordinate) {
 				if nVert != nil && nVert.Distance < closestVertex.Distance {
 					nDirX := nVert.Coordinate.X - v.Coordinate.X
 					nDirY := nVert.Coordinate.Y - v.Coordinate.Y
-					if _, ok := gg.VertexMap[Coordinate{X: nDirX, Y: nDirY}]; ok {
+					if _, ok := gg.VertexMap[rl.NewVector2(nDirX, nDirY)]; ok {
 						if nDirX == 0 || nDirY == 0 {
-							preferredNeighbour = gg.VertexMap[Coordinate{X: nDirX, Y: nDirY}]
+							preferredNeighbour = gg.VertexMap[rl.NewVector2(nDirX, nDirY)]
 						}
-						closestVertex = gg.VertexMap[Coordinate{X: nDirX, Y: nDirY}]
+						closestVertex = gg.VertexMap[rl.NewVector2(nDirX, nDirY)]
 					}
 				}
 			}
@@ -236,67 +220,15 @@ func (gg *GridGraph) Dijkstra(target Coordinate) {
 	}
 }
 
-// Moves every robot one tile closer to the target by checking their neighbours
-// distance and moving towards the lowest one, if there is none, the robot has
-// reached the target
-func (gg *GridGraph) MoveRobotsToTarget() {
-	for _, robot := range gg.Robots {
-		// check if we are at the target already, if yes, then skip
-		if gg.VertexMap[robot.Coords].Distance == 0 {
-			continue
-		}
-		neighbours := gg.VertexMap[robot.Coords].Neighbours
-		var closestNeighbour *Vertex
-		smallestDistance := math.MaxInt
-		// find smallest distance and corresponding vert
-		for _, nVert := range neighbours {
-			// check for smaller distance
-			if nVert.Distance < smallestDistance {
-				// if another robot is on the tile already, skip this one (flag it)
-				continueFlag := false
-				for _, rob := range gg.Robots {
-					if nVert.Coordinate == rob.Coords {
-						continueFlag = true
-					}
-				}
-				// only set the tile as closets neighbour if it wasn flagged
-				if !continueFlag {
-					smallestDistance = nVert.Distance
-					closestNeighbour = nVert
-				}
-			}
-		}
-
-		// set robot to new position
-		if closestNeighbour != nil {
-			// TODO: set offset
-			robot.Direction = rl.NewVector2(
-				float32(closestNeighbour.Coordinate.X)-float32(robot.Coords.X),
-				float32(closestNeighbour.Coordinate.Y)-float32(robot.Coords.Y),
-			)
-			robot.Coords = closestNeighbour.Coordinate
-		}
-	}
-}
-
-// Adds a robot to the graph
-func (gg *GridGraph) AddRobot(position Coordinate) {
-	// check if position is in the grid graph
-	if _, ok := gg.VertexMap[position]; ok {
-		robotColor := rl.NewColor(
-			uint8(rand.Int()%256),
-			uint8(rand.Int()%256),
-			uint8(rand.Int()%256),
-			255)
-		newRobot := &Robot{position, robotColor, rl.Vector2Zero()}
-		gg.Robots[len(gg.Robots)] = newRobot
-	}
+// Returns the direction a robot needs to take, according to the grid graph
+func (gg *GridGraph) GetDirection(position rl.Vector2) rl.Vector2 {
+	return rl.Vector2Zero()
 }
 
 // The Dijkstra algorithm can only calculate the distance to the target if it is reachable, if a tile can
 // not reach the target, the algorithm will fail. Call this function before Dijkstra to ensure that unreachable
 // tiles will be removed (set as an obstacle), to avoid this fail.
-func (gg *GridGraph) RemoveUnreachableTiles(position Coordinate) {
+func (gg *GridGraph) RemoveUnreachableTiles(position rl.Vector2) {
 	// nodes that are connectet to position
 	var reachableNodes []*Vertex
 	// nodes that are neighbours of the current node, but not yet completely checked
@@ -327,7 +259,7 @@ func (gg *GridGraph) RemoveUnreachableTiles(position Coordinate) {
 			nodesToCheck = slices.Delete(nodesToCheck, index, index+1)
 		}
 	}
-	newVertexMap := make(map[Coordinate]*Vertex)
+	newVertexMap := make(map[rl.Vector2]*Vertex)
 	for _, vert := range reachableNodes {
 		newVertexMap[vert.Coordinate] = vert
 	}
@@ -335,7 +267,7 @@ func (gg *GridGraph) RemoveUnreachableTiles(position Coordinate) {
 }
 
 // Sets an "obstacle" in the graph. Basically removes a vertex from the grid graph
-func (gg *GridGraph) SetObstacle(position Coordinate) {
+func (gg *GridGraph) SetObstacle(position rl.Vector2) {
 	// check if position is (still) in the grid graph
 	if vert, ok := gg.VertexMap[position]; ok {
 		// remove the vert from its neighbours
@@ -393,6 +325,6 @@ func (gg *GridGraph) CalculateGridGraphFromImage(mapImage *rl.Image, tileSize in
 		}
 	}
 	for _, ob := range gridGraphObstacles {
-		gg.SetObstacle(Coordinate{X: int(ob.X), Y: int(ob.Y)})
+		gg.SetObstacle(rl.NewVector2(ob.X, ob.Y))
 	}
 }

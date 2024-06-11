@@ -10,8 +10,8 @@ type GameSettings struct {
 	Version string `json:"version"` // 0.0.0
 	Title   string `json:"title"`   // made with gorl
 	// Display
-	ScreenWidth     int  `json:"screenWidth"`     // 1920
-	ScreenHeight    int  `json:"screenHeight"`    // 1080
+	ScreenWidth     int  `json:"screenWidth"`     // 1800
+	ScreenHeight    int  `json:"screenHeight"`    // 960
 	RenderWidth     int  `json:"renderWidth"`     // 1920
 	RenderHeight    int  `json:"renderHeight"`    // 1080
 	TargetFps       int  `json:"targetFps"`       // 144
@@ -40,8 +40,8 @@ func UseFallbackSettings() {
 	settings = &GameSettings{
 		Version:  "0.0.0",
 		Title:  "made with gorl",
-		ScreenWidth:  1920,
-		ScreenHeight:  1080,
+		ScreenWidth:  1800,
+		ScreenHeight:  960,
 		RenderWidth:  1920,
 		RenderHeight:  1080,
 		TargetFps:  144,

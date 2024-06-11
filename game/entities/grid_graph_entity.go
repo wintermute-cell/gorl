@@ -18,9 +18,6 @@ type GridGraphEntity struct {
 	*entities.Entity // Required!
 	gg               *grid_graph.GridGraph
 	TextSize         int32
-
-	// NOTE: WORKAROUND FOR DOUBLE INPUT CALLING
-	inputCounter int
 }
 
 // NewGridGraphEntity creates a new instance of the GridGraphEntity.
@@ -42,8 +39,8 @@ func (ent *GridGraphEntity) Init() {
 	mapImage := rl.LoadImage("./map_thresh.png")
 	ent.gg = grid_graph.NewGridGraph(48, 27)
 	ent.gg.CalculateGridGraphFromImage(mapImage, 40)
-	ent.gg.RemoveUnreachableTiles(grid_graph.Coordinate{X: 10, Y: 0})
-	ent.gg.Dijkstra(grid_graph.Coordinate{X: 10, Y: 0})
+	// ent.gg.RemoveUnreachableTiles(rl.NewVector2(10, 0))
+	// ent.gg.Dijkstra(rl.NewVector2(10, 0))
 }
 
 func (ent *GridGraphEntity) Deinit() {
@@ -136,15 +133,6 @@ func (ent *GridGraphEntity) Draw() {
 			rl.Black,
 		)
 	}
-	// draw the robots
-	for _, robot := range ent.gg.Robots {
-		rl.DrawCircle(
-			int32(int32(robot.Coords.X)*ent.gg.TileSize+ent.gg.TileSize/2)+int32(ent.GetPosition().X),
-			int32(int32(robot.Coords.Y)*ent.gg.TileSize+ent.gg.TileSize/2)+int32(ent.GetPosition().Y),
-			10,
-			robot.Color,
-		)
-	}
 }
 
 func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
@@ -162,29 +150,14 @@ func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
 		),
 		1/float32(ent.gg.TileSize),
 	)
-	sclCoord := grid_graph.Coordinate{X: int(sclMousePos.X), Y: int(sclMousePos.Y)}
+	sclMousePos = rl.NewVector2(float32(int(sclMousePos.X)), float32(int(sclMousePos.Y)))
 
 	if event.Action == input.ActionClickDown {
-		ent.gg.Dijkstra(sclCoord)
+		ent.gg.RemoveUnreachableTiles(sclMousePos)
+		ent.gg.Dijkstra(sclMousePos)
 	}
 	if event.Action == input.ActionPlaceObstacle {
-		ent.gg.SetObstacle(sclCoord)
-	}
-	if event.Action == input.ActionMoveRobotsToTarget {
-		// NOTE: warum wird das immer zweimal gecallet?
-		ent.inputCounter++
-		if ent.inputCounter >= 2 {
-			ent.gg.MoveRobotsToTarget()
-			ent.inputCounter = 0
-		}
-	}
-	if event.Action == input.ActionPlaceRobot {
-		// NOTE: warum wird das immer zweimal gecallet?
-		ent.inputCounter++
-		if ent.inputCounter >= 2 {
-			ent.gg.AddRobot(sclCoord)
-			ent.inputCounter = 0
-		}
+		ent.gg.SetObstacle(sclMousePos)
 	}
 	return true
 }
