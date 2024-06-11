@@ -48,13 +48,15 @@ func Traverse(withFixedUpdate bool) ([]render.Drawable, []input.InputReceiver) {
 		node, _ := nodeStack.Pop()
 		tMat3, _ := transformStack.Pop()
 
-		// of the entity is not enabled, skip it and its children
+		// if the entity is not enabled, skip it and its children
 		if !node.entity.IsEnabled() {
 			continue
 		}
 
-		// add the enabler to the input receivers
-		inputReceivers = append(inputReceivers, node.entity)
+		// add the entity to the input receivers
+		if node.entity.IsEnabled() {
+			inputReceivers = append(inputReceivers, node.entity)
+		}
 
 		// Update the entity
 		node.entity.Update()
