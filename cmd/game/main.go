@@ -7,12 +7,11 @@ import (
 	"gorl/fw/core/gem"
 	input "gorl/fw/core/input/input_handling"
 	"gorl/fw/core/logging"
-	"gorl/fw/core/math"
 	"gorl/fw/core/render"
 	"gorl/fw/core/settings"
 	"gorl/fw/core/store"
+	"gorl/fw/physics"
 	"gorl/game"
-	"gorl/game/entities"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
@@ -54,8 +53,7 @@ func main() {
 		int32(settings.CurrentSettings().ScreenHeight),
 		settings.CurrentSettings().Title)
 	defer rl.CloseWindow()
-	//rl.SetTargetFPS(int32(settings.CurrentSettings().TargetFps))
-	rl.SetTargetFPS(9999)
+	rl.SetTargetFPS(int32(settings.CurrentSettings().TargetFps))
 
 	// rendering
 	render.Init(rl.NewVector2(
@@ -74,8 +72,8 @@ func main() {
 	//defer collision.DeinitCollision()
 
 	// physics
-	//physics.InitPhysics((1.0 / 60.0), rl.Vector2Zero(), (1.0 / 32.0))
-	//defer physics.DeinitPhysics()
+	physics.InitPhysics((1.0 / 60.0), rl.Vector2Zero(), (1.0 / 32.0))
+	defer physics.DeinitPhysics()
 
 	gem.Init()
 	defer gem.Deinit()
@@ -121,22 +119,11 @@ func main() {
 	frameStart := time.Now()
 	var frameTime time.Duration = 0
 
-	cameraEntity := entities.NewCameraEntity(
-		rl.Vector2Zero(),
-		rl.Vector2Zero(),
-		rl.NewVector2(
-			float32(settings.CurrentSettings().ScreenWidth),
-			float32(settings.CurrentSettings().ScreenHeight),
-		),
-		rl.Vector2Zero(),
-		math.Flag0,
-	)
-	gem.Append(gem.GetRoot(), cameraEntity)
-
 	for !shouldExit {
 		frameStart = time.Now()
 
-		drawables, inputReceivers := gem.Traverse(false) // TODO: add fixed update timing
+		shouldFixedUpdate := physics.Update()
+		drawables, inputReceivers := gem.Traverse(shouldFixedUpdate)
 
 		//scenes.UpdateScenes() // TODO: rework scenes to be more clear
 		//scenes.FixedUpdateScenes()
@@ -169,6 +156,7 @@ func main() {
 func DrawDebugInfo(frameTime time.Duration) {
 	rl.DrawFPS(10, 10)
 	rl.DrawText("dt: "+frameTime.String(), 10, 30, 20, rl.Lime)
+	//physics.DrawColliders(true, true, true)
 	//render.DebugDrawStageViewports(
 	//	rl.NewVector2(10, 10), 4, render,
 	//	[]*render.RenderStage{defaultRenderStage},

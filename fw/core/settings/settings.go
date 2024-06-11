@@ -38,19 +38,19 @@ func CurrentSettings() *GameSettings {
 
 func UseFallbackSettings() {
 	settings = &GameSettings{
-		Version:  "0.0.0",
-		Title:  "made with gorl",
-		ScreenWidth:  960,
-		ScreenHeight:  540,
-		RenderWidth:  1920,
-		RenderHeight:  1080,
-		TargetFps:  144,
-		Fullscreen:  false,
+		Version:          "0.0.0",
+		Title:            "made with gorl",
+		ScreenWidth:      960,
+		ScreenHeight:     540,
+		RenderWidth:      1920,
+		RenderHeight:     1080,
+		TargetFps:        144,
+		Fullscreen:       false,
 		EnableCrtEffect:  true,
-		MouseSensitivity:  1.0,
-		SoundVolume:  0.5,
-		LogPath:  "logs/",
-		EnableGamepad:  false,
+		MouseSensitivity: 1.0,
+		SoundVolume:      0.5,
+		LogPath:          "logs/",
+		EnableGamepad:    false,
 	}
 }
 
