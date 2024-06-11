@@ -53,14 +53,14 @@ func Traverse(withFixedUpdate bool) ([]render.Drawable, []input.InputReceiver) {
 			continue
 		}
 
-		// add the enabler to the input receivers
-		inputReceivers = append(inputReceivers, node.entity)
-
 		// Update the entity
 		node.entity.Update()
 		if withFixedUpdate {
 			node.entity.FixedUpdate()
 		}
+
+		// add the enabler to the input receivers
+		inputReceivers = append(inputReceivers, node.entity)
 
 		drawables = append(drawables, WrappedEntity{
 			IEntity:      node.entity,
