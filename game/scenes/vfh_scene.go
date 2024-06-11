@@ -4,6 +4,8 @@ import (
 	"gorl/fw/core/gem"
 	"gorl/fw/core/math"
 	"gorl/fw/core/settings"
+	"gorl/fw/core/store"
+
 	"gorl/fw/modules/scenes"
 	"gorl/game/entities"
 
@@ -35,14 +37,18 @@ func (scn *VfhScene) Init() {
 		rl.Vector2Zero(),
 		math.Flag0,
 	)
-	gem.Append(gem.GetRoot(), cameraEntity)
+	gem.Append(scn.GetRoot(), cameraEntity)
+	store.Add(cameraEntity)
 
-	actor := entities.NewVfhActorEntity(rl.NewVector2(100, 100))
+	actorInfo := entities.NewActorInfoEntity()
+	gem.Append(cameraEntity, actorInfo)
+	store.Add(actorInfo)
+
+	actor := entities.NewVfhActorEntity(rl.NewVector2(500, 400), 25, 120, 300)
 	gem.Append(scn.GetRoot(), actor)
 
 	env := entities.NewEnvironmentEntity()
 	gem.Append(scn.GetRoot(), env)
-
 }
 
 func (scn *VfhScene) Deinit() {

@@ -30,7 +30,7 @@ func NewEnvironmentEntity() *EnvironmentEntity {
 	new_ent := &EnvironmentEntity{
 		Entity:        entities.NewEntity("EnvironmentEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
 		cols:          make([]*physics.Collider, 0),
-		groundTexture: rl.LoadTexture("assets/map_thresh_whitewalls.png"),
+		groundTexture: rl.LoadTexture("map_thresh_whitewalls.png"),
 	}
 
 	new_ent.cols = append(new_ent.cols,
