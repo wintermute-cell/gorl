@@ -54,6 +54,10 @@ func (ent *CameraEntity) WorldToScreen(worldPos rl.Vector2) rl.Vector2 {
 	return ent.camera.WorldToScreen(worldPos)
 }
 
+// ============================================================================
+// IEntity
+// ============================================================================
+
 func (ent *CameraEntity) Init() {
 	// Initialization logic for the entity
 	// ...
@@ -92,6 +96,7 @@ func (ent *CameraEntity) OnInputEvent(event *input.InputEvent) bool {
 	// ...
 
 	const moveSpeed = 100
+	const zoomSpeed = 0.1
 
 	if event.Action == input.ActionMoveLeft {
 		ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.NewVector2(-moveSpeed*rl.GetFrameTime(), 0)))
@@ -104,6 +109,12 @@ func (ent *CameraEntity) OnInputEvent(event *input.InputEvent) bool {
 	}
 	if event.Action == input.ActionMoveDown {
 		ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.NewVector2(0, moveSpeed*rl.GetFrameTime())))
+	}
+	if event.Action == input.ActionZoomIn {
+		ent.SetScale(rl.NewVector2(ent.GetScale().X+zoomSpeed*rl.GetFrameTime(), 1))
+	}
+	if event.Action == input.ActionZoomOut {
+		ent.SetScale(rl.NewVector2(ent.GetScale().X-zoomSpeed*rl.GetFrameTime(), 1))
 	}
 
 	return true

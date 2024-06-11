@@ -83,13 +83,6 @@ func (ent *VfhActorEntity) Update() {
 		}
 	}
 
-	//hit := physics.Raycast(ent.GetPosition(), rl.Vector2{X: -1, Y: 0}, 400, physics.CollisionCategoryAll)
-	//if len(hit) > 0 {
-	//	ent.hitPoint = hit[0].IntersectionPoint
-	//} else {
-	//	ent.hitPoint = rl.Vector2{}
-	//}
-
 	for idx, rayDir := range ent.rayDirections {
 		rayDir = rl.Vector2Rotate(rayDir, ent.GetRotation()*rl.Deg2rad)
 		hit := physics.Raycast(ent.GetPosition(), rayDir, ent.visionRange, physics.CollisionCategoryAll)
