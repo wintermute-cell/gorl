@@ -3,6 +3,7 @@ package render
 import (
 	input "gorl/fw/core/input/input_handling"
 	"gorl/fw/core/math"
+	"gorl/game/code/colorscheme"
 	"slices"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -83,7 +84,7 @@ func Draw(drawables []Drawable) []input.InputReceiver {
 	// Draw all camera render targets to the final target.
 	// Apply per camera shaders in the process.
 	rl.BeginTextureMode(rendererInstance.finalTarget)
-	rl.ClearBackground(rl.RayWhite)
+	rl.ClearBackground(colorscheme.Colorscheme.Color16.ToRGBA())
 	for _, camera := range rendererInstance.cameras {
 		applyShaders(camera)
 		rl.DrawTexturePro(

@@ -30,7 +30,7 @@ func NewEnvironmentEntity() *EnvironmentEntity {
 	new_ent := &EnvironmentEntity{
 		Entity:        entities.NewEntity("EnvironmentEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
 		cols:          make([]*physics.Collider, 0),
-		groundTexture: rl.LoadTexture("map_thresh_whitewalls.png"),
+		groundTexture: rl.LoadTexture("map_thresh_whitewalls_antialiased.png"),
 	}
 
 	new_ent.cols = append(new_ent.cols,
@@ -60,17 +60,17 @@ func (ent *EnvironmentEntity) Update() {
 }
 
 func (ent *EnvironmentEntity) Draw() {
-	rl.DrawTexture(ent.groundTexture, 0, 0, rl.White)
-	for _, col := range ent.cols {
-		verts := col.GetVertices()
-		for idx, v := range verts {
-			if idx == 0 {
-				rl.DrawLineEx(v, verts[len(verts)-1], 2, rl.Green)
-			} else {
-				rl.DrawLineEx(v, verts[idx-1], 2, rl.Green)
-			}
-		}
-	}
+	//rl.DrawTexture(ent.groundTexture, 0, 0, rl.White)
+	//for _, col := range ent.cols {
+	//	verts := col.GetVertices()
+	//	for idx, v := range verts {
+	//		if idx == 0 {
+	//			rl.DrawLineEx(v, verts[len(verts)-1], 2, rl.Green)
+	//		} else {
+	//			rl.DrawLineEx(v, verts[idx-1], 2, rl.Green)
+	//		}
+	//	}
+	//}
 }
 
 func (ent *EnvironmentEntity) OnInputEvent(event *input.InputEvent) bool {

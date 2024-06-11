@@ -22,7 +22,7 @@ func Vector2Clamp(input, min, max rl.Vector2) rl.Vector2 {
 }
 
 type number interface {
-	int | int16 | int32 | int64 | uint | uint16 | uint32 | uint64 | float32 | float64
+	int | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | float32 | float64
 }
 
 type signed_number interface {
@@ -42,11 +42,11 @@ func Sign[T signed_number](x T) T {
 
 // Abs returns the absolute value of x
 func Abs[T number](x T) T {
-    ret := x
-    if x < 0 {
-        ret = -x
-    }
-    return ret
+	ret := x
+	if x < 0 {
+		ret = -x
+	}
+	return ret
 }
 
 // Max will return the maximum value between x and y
@@ -195,7 +195,7 @@ func Vector2MoveTowards(current, target rl.Vector2, step float32) rl.Vector2 {
 	}
 
 	// Normalize the delta vector
-    dir := Vector2NormalizeSafe(delta)
+	dir := Vector2NormalizeSafe(delta)
 
 	// Move the vector by step towards target
 	moved := rl.Vector2Add(current, rl.Vector2Scale(dir, step))

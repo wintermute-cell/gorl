@@ -18,6 +18,7 @@ const (
 	// Add other actions as needed
 	ActionZoomIn
 	ActionZoomOut
+	ActionNextAnimation
 )
 
 var ActionMap = map[Action][]Trigger{
@@ -54,6 +55,9 @@ var ActionMap = map[Action][]Trigger{
 	},
 	ActionZoomOut: {
 		{InputType: InputTypeKey, TriggerType: TriggerTypeDown, Key: rl.KeyE},
+	},
+	ActionNextAnimation: {
+		{InputType: InputTypeKey, TriggerType: TriggerTypePressed, Key: rl.KeyN},
 	},
 	// Add other action-trigger mappings
 }

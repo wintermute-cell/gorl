@@ -96,7 +96,7 @@ func (ent *CameraEntity) OnInputEvent(event *input.InputEvent) bool {
 	// ...
 
 	const moveSpeed = 100
-	const zoomSpeed = 0.1
+	const zoomSpeed = 0.3
 
 	if event.Action == input.ActionMoveLeft {
 		ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.NewVector2(-moveSpeed*rl.GetFrameTime(), 0)))
