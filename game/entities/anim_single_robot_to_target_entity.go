@@ -23,7 +23,7 @@ type AnimSingleRobotToTargetEntity struct {
 	faderRobot     int
 	moveDelay      float32 // delay between each robot movement
 	isRobotsMoving bool
-	robotSec       float32 // helper for robot seconds counting
+	robotSec       float32 // helper for robot seconds counting til next move
 	inputCounter   int     // for fixing double input action
 	TextSize       int
 }
@@ -163,6 +163,7 @@ func (ent *AnimSingleRobotToTargetEntity) Draw() {
 	// draw the robots
 	for _, robot := range ent.gg.Robots {
 		robotColor := rl.NewColor(robot.Color.R, robot.Color.G, robot.Color.B, uint8(ent.faderRobot))
+		// TODO: add offset, update (decrease) offset in extra func
 		rl.DrawCircle(
 			int32(int32(robot.Coords.X)*ent.gg.TileSize+ent.gg.TileSize/2)+int32(ent.GetPosition().X),
 			int32(int32(robot.Coords.Y)*ent.gg.TileSize+ent.gg.TileSize/2)+int32(ent.GetPosition().Y),

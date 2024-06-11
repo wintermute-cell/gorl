@@ -1,6 +1,7 @@
 package input
 
 import (
+	"fmt"
 	input "gorl/fw/core/input/input_event"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -44,6 +45,7 @@ func checkForInputs() []*input.InputEvent {
 						events = append(events, input.NewInputEvent(action, mousePosition))
 					}
 				case input.TriggerTypePressed:
+					fmt.Println("Hello")
 					if rl.IsKeyPressed(trigger.Key) {
 						events = append(events, input.NewInputEvent(action, mousePosition))
 					}

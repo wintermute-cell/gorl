@@ -52,6 +52,8 @@ type Coordinate struct {
 type Robot struct {
 	Coords Coordinate
 	Color  rl.Color
+	//====== for smooth movement
+	Direction rl.Vector2
 }
 
 // Builds a new Grid Graph in the given dimensions
@@ -148,7 +150,7 @@ func NewGridGraph(width int, height int) *GridGraph {
 		}
 	}
 	// NOTE: just a sample robot
-	gridGraph.Robots[0] = &Robot{Coordinate{X: 20, Y: 20}, rl.Green}
+	gridGraph.Robots[0] = &Robot{Coordinate{X: 20, Y: 20}, rl.Green, rl.Vector2Zero()}
 	return &gridGraph
 }
 
@@ -267,6 +269,11 @@ func (gg *GridGraph) MoveRobotsToTarget() {
 
 		// set robot to new position
 		if closestNeighbour != nil {
+			// TODO: set offset
+			robot.Direction = rl.NewVector2(
+				float32(closestNeighbour.Coordinate.X)-float32(robot.Coords.X),
+				float32(closestNeighbour.Coordinate.Y)-float32(robot.Coords.Y),
+			)
 			robot.Coords = closestNeighbour.Coordinate
 		}
 	}
@@ -281,7 +288,7 @@ func (gg *GridGraph) AddRobot(position Coordinate) {
 			uint8(rand.Int()%256),
 			uint8(rand.Int()%256),
 			255)
-		newRobot := &Robot{position, robotColor}
+		newRobot := &Robot{position, robotColor, rl.Vector2Zero()}
 		gg.Robots[len(gg.Robots)] = newRobot
 	}
 }
