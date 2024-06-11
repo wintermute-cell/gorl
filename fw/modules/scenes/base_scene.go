@@ -1,6 +1,10 @@
 package scenes
 
-import "gorl/fw/core/entities"
+import (
+	"gorl/fw/core/entities"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 type Scene struct {
 	rootNode *entities.Entity
@@ -9,7 +13,7 @@ type Scene struct {
 // GetRoot returns the root node of the scene.
 func (s *Scene) GetRoot() *entities.Entity {
 	if s.rootNode == nil {
-		s.rootNode = &entities.Entity{Name: "SceneRoot"}
+		s.rootNode = entities.NewEntity("root", rl.Vector2Zero(), 0, rl.Vector2One())
 	}
 	return s.rootNode
 }

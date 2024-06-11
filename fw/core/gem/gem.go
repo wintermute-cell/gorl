@@ -66,7 +66,7 @@ func Append(parent, entity entities.IEntity) {
 		parent:   parentNode,
 		children: make([]*gemNode, 0),
 	}
-	gemInstance.root.children = append(gemInstance.root.children, node)
+	parentNode.children = append(parentNode.children, node)
 	gemInstance.nodeMap[entity] = node
 
 	entity.Init()
