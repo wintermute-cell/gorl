@@ -156,7 +156,7 @@ func main() {
 func DrawDebugInfo(frameTime time.Duration) {
 	rl.DrawFPS(10, 10)
 	rl.DrawText("dt: "+frameTime.String(), 10, 30, 20, rl.Lime)
-	physics.DrawColliders(true, true, true)
+	//physics.DrawColliders(true, true, true)
 	//render.DebugDrawStageViewports(
 	//	rl.NewVector2(10, 10), 4, render,
 	//	[]*render.RenderStage{defaultRenderStage},

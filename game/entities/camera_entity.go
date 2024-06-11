@@ -40,6 +40,20 @@ func NewCameraEntity(
 	return new_ent
 }
 
+// ============================================================================
+// Utilities
+// ============================================================================
+
+// ScreenToWorld converts a screen position to a world position.
+func (ent *CameraEntity) ScreenToWorld(screenPos rl.Vector2) rl.Vector2 {
+	return ent.camera.ScreenToWorld(screenPos)
+}
+
+// WorldToScreen converts a world position to a screen position.
+func (ent *CameraEntity) WorldToScreen(worldPos rl.Vector2) rl.Vector2 {
+	return ent.camera.WorldToScreen(worldPos)
+}
+
 func (ent *CameraEntity) Init() {
 	// Initialization logic for the entity
 	// ...
