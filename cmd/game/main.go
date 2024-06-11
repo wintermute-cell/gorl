@@ -53,8 +53,7 @@ func main() {
 		int32(settings.CurrentSettings().ScreenHeight),
 		settings.CurrentSettings().Title)
 	defer rl.CloseWindow()
-	//rl.SetTargetFPS(int32(settings.CurrentSettings().TargetFps))
-	rl.SetTargetFPS(9999)
+	rl.SetTargetFPS(int32(settings.CurrentSettings().TargetFps))
 
 	// rendering
 	render.Init(rl.NewVector2(
@@ -132,14 +131,11 @@ func main() {
 		rl.BeginDrawing()
 
 		drawableInputReceivers := render.Draw(drawables)
-		logging.Debug("%v", nonDrawableInputReceivers)
-		logging.Debug("%v", drawableInputReceivers)
 
 		// input is processed at the end of the frame, because here we know in
 		// what order the entities were drawn, and can be sure whatever the
 		// user clicked was really visible at the front.
 		inputEventReceivers := append(nonDrawableInputReceivers, drawableInputReceivers...)
-		logging.Debug("%v", inputEventReceivers)
 		input.HandleInputEvents(inputEventReceivers)
 
 		// Draw Debug Info
@@ -160,7 +156,7 @@ func main() {
 func DrawDebugInfo(frameTime time.Duration) {
 	rl.DrawFPS(10, 10)
 	rl.DrawText("dt: "+frameTime.String(), 10, 30, 20, rl.Lime)
-	physics.DrawColliders(true, false, false)
+	physics.DrawColliders(true, true, true)
 	//render.DebugDrawStageViewports(
 	//	rl.NewVector2(10, 10), 4, render,
 	//	[]*render.RenderStage{defaultRenderStage},

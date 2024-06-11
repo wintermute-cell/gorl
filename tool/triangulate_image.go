@@ -83,16 +83,16 @@ func GenerateCollidersFromImage(image_path string, simplification_range float32)
 				Y: float64(point.Y),
 			})
 		}
-		triangles, _ := tri.Triangulate(tri_points)
-		for _, triangle := range triangles {
-			as_slice := []point{
-				{X: int32(triangle.A.X), Y: int32(triangle.A.Y)},
-				{X: int32(triangle.B.X), Y: int32(triangle.B.Y)},
-				{X: int32(triangle.C.X), Y: int32(triangle.C.Y)},
-			}
-			fmt.Printf("%v", as_slice)
-		}
-		//fmt.Printf("%v", simplificationTwo)
+		//triangles, _ := tri.Triangulate(tri_points)
+		//for _, triangle := range triangles {
+		//	as_slice := []point{
+		//		{X: int32(triangle.A.X), Y: int32(triangle.A.Y)},
+		//		{X: int32(triangle.B.X), Y: int32(triangle.B.Y)},
+		//		{X: int32(triangle.C.X), Y: int32(triangle.C.Y)},
+		//	}
+		//	fmt.Printf("%v", as_slice)
+		//}
+		fmt.Printf("%v", simplificationTwo)
 	}
 }
 
@@ -460,7 +460,7 @@ func drawPolygons(imagePath string, polyStr string) {
 		for _, polygon := range polygons {
 			// Draw polygon outline
 			for i := 0; i < len(polygon)-1; i++ {
-				rl.DrawCircle(polygon[i].X, polygon[i].Y, 0.1, rl.Green)
+				rl.DrawCircle(polygon[i].X, polygon[i].Y, 2, rl.Green)
 				rl.DrawLine(
 					int32(polygon[i].X),
 					int32(polygon[i].Y),

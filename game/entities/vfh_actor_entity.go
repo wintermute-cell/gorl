@@ -3,7 +3,6 @@ package entities
 import (
 	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_event"
-	"gorl/fw/core/logging"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -48,6 +47,8 @@ func (ent *VfhActorEntity) Update() {
 func (ent *VfhActorEntity) Draw() {
 	// Draw logic for the entity
 	// ...
+
+	rl.DrawCircleV(ent.GetPosition(), 10, rl.Red)
 }
 
 func (ent *VfhActorEntity) OnInputEvent(event *input.InputEvent) bool {
@@ -55,8 +56,5 @@ func (ent *VfhActorEntity) OnInputEvent(event *input.InputEvent) bool {
 	// Return false if the event was consumed and should not be propagated
 	// further.
 	// ...
-	if event.Action == input.ActionMoveUp {
-		logging.Debug("OOF")
-	}
 	return true
 }
