@@ -1,3 +1,4 @@
+// TODO:e put this in grid_graph_entity
 package grid_graph
 
 import (
@@ -328,3 +329,4 @@ func (gg *GridGraph) CalculateGridGraphFromImage(mapImage *rl.Image, tileSize in
 		gg.SetObstacle(rl.NewVector2(ob.X, ob.Y))
 	}
 }
+
