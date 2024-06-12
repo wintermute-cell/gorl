@@ -122,7 +122,43 @@ func (ent *GridGraphEntity) Draw() {
 
 	}
 	// draw an arrow to the closest neighbour (if there is one) TODO:
+	for _, vert := range ent.Gg.VertexMap {
+		if vert.ClosestNeighbour != nil {
+			// NOTE: HARDCODED!
+			scale := 40
+			arrowTipDirection := rl.Vector2Subtract(vert.ClosestNeighbour.Coordinate, vert.Coordinate)
+			arrowTipDirection = rl.Vector2Scale(arrowTipDirection, float32(scale))
+			// arrowTipDirection,
+			// rl.NewVector2(float32(scale/2), float32(scale/2)),
+			// )
+			// arrowTipPosition = rl.Vector2Scale(arrowTipDirection, 10)
+			// arrowTipPosition = rl.Vector2Scale(vert.Coordinate, float32(scale))
 
+			// convert to world space
+			arrowOrigin := rl.Vector2Scale(vert.Coordinate, float32(scale))
+			// mid shift
+			arrowOrigin = rl.Vector2Add(arrowOrigin, rl.NewVector2(float32(scale)/2, float32(scale)/2))
+
+			arrowTipPosition := rl.Vector2Add(
+				arrowOrigin,
+				rl.Vector2Scale(arrowTipDirection, 0.3),
+			)
+			// rl.Vector2Scale(arrowTipDirection, float32(scale)/3),
+			// )
+
+			rl.DrawLineEx(
+				arrowOrigin,
+				arrowTipPosition,
+				3,
+				rl.Black,
+			)
+			rl.DrawCircleV(
+				arrowTipPosition,
+				4,
+				rl.Black,
+			)
+		}
+	}
 	// draw grid
 	for i := range ent.Gg.Width + 1 {
 		rl.DrawLine(
@@ -306,6 +342,7 @@ func NewGridGraph(width int, height int) *GridGraph {
 // of all other tiles to the target. The algorithm will fail, if there are
 // encircled tiles present. Call RemoveUnreachableTiles to avoid that problem
 // and declare these encircled paths as obstacles.
+// FIXME: when calculating the distance, diagonals should only be considered if there is no obstacle at the corner tile
 func (gg *GridGraph) Dijkstra(target rl.Vector2) {
 	// target is a raw mouse position, we need to cast it to an int
 	targetScaled := rl.NewVector2(float32(int(target.X)), float32(int(target.Y)))
@@ -430,16 +467,63 @@ func (gg *GridGraph) RemoveUnreachableTiles(position rl.Vector2) {
 // Sets an "obstacle" in the graph. Basically removes a vertex from the grid graph
 func (gg *GridGraph) SetObstacle(position rl.Vector2) {
 	// check if position is (still) in the grid graph
-	if vert, ok := gg.VertexMap[position]; ok {
+	if obstacleVert, ok := gg.VertexMap[position]; ok {
 		// remove the vert from its neighbours
-		for _, nVert := range vert.Neighbours {
-			index := slices.Index(nVert.Neighbours, vert)
+		for _, nVert := range obstacleVert.Neighbours {
+			// remove the obstacle it self from its neighbour
+			index := slices.Index(nVert.Neighbours, obstacleVert)
 			if index != -1 {
 				nVert.Neighbours = slices.Delete(nVert.Neighbours, index, index+1)
 			}
+			// positions for the horizontal and vertical neighbours
+			directionLeft := rl.Vector2Add(obstacleVert.Coordinate, rl.NewVector2(-1, 0))
+			directionRight := rl.Vector2Add(obstacleVert.Coordinate, rl.NewVector2(1, 0))
+			directionUp := rl.Vector2Add(obstacleVert.Coordinate, rl.NewVector2(0, -1))
+			directionDown := rl.Vector2Add(obstacleVert.Coordinate, rl.NewVector2(0, 1))
+			// remove the vertices that are 1 tile apart in horizontal or vertical direction as neighbours as well
+			// for that, we need the direction of the obstacle seen from the neighbouring vertex, we only need either
+			// the horizontal two vertices, or the vertical two vertices
+			obstacleDirection := rl.Vector2Subtract(obstacleVert.Coordinate, nVert.Coordinate)
+			if obstacleDirection.X == 0 {
+
+				if obstacleDirection.Y == 1 || obstacleDirection.Y == -1 {
+					if otherNVert, ok := gg.VertexMap[directionLeft]; ok {
+						// remove the upper and lower obstaclet from its neighbour
+						index := slices.Index(nVert.Neighbours, otherNVert)
+						if index != -1 {
+							nVert.Neighbours = slices.Delete(nVert.Neighbours, index, index+1)
+						}
+					}
+					if otherNVert, ok := gg.VertexMap[directionRight]; ok {
+						// remove the upper and lower obstaclet from its neighbour
+						index := slices.Index(nVert.Neighbours, otherNVert)
+						if index != -1 {
+							nVert.Neighbours = slices.Delete(nVert.Neighbours, index, index+1)
+						}
+					}
+				}
+			}
+			if obstacleDirection.Y == 0 {
+				if obstacleDirection.X == 1 || obstacleDirection.X == -1 {
+					if otherNVert, ok := gg.VertexMap[directionUp]; ok {
+						// remove the upper and lower obstaclet from its neighbour
+						index := slices.Index(nVert.Neighbours, otherNVert)
+						if index != -1 {
+							nVert.Neighbours = slices.Delete(nVert.Neighbours, index, index+1)
+						}
+					}
+					if otherNVert, ok := gg.VertexMap[directionDown]; ok {
+						// remove the upper and lower obstaclet from its neighbour
+						index := slices.Index(nVert.Neighbours, otherNVert)
+						if index != -1 {
+							nVert.Neighbours = slices.Delete(nVert.Neighbours, index, index+1)
+						}
+					}
+				}
+			}
 		}
 		// remove the vert from the VertexMap itself
-		delete(gg.VertexMap, vert.Coordinate)
+		delete(gg.VertexMap, obstacleVert.Coordinate)
 	}
 }
 
