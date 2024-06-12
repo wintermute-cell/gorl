@@ -33,13 +33,37 @@ func NewEnvironmentEntity() *EnvironmentEntity {
 		groundTexture: rl.LoadTexture("map_thresh_whitewalls_antialiased.png"),
 	}
 
+	// a chain collider surrounding the 1920x1080 map
 	new_ent.cols = append(new_ent.cols,
 		physics.NewChainShapeCollider(
 			rl.Vector2Zero(),
-			collider1Points,
+			[]rl.Vector2{
+				{X: 0, Y: 0}, {X: 1920, Y: 0}, {X: 1920, Y: 1080}, {X: 0, Y: 1080},
+			},
 			physics.BodyTypeStatic,
 		),
 	)
+
+	// Add the large colliders for the map geometry
+	for _, colPoints := range [][]rl.Vector2{
+		collider1Points,
+		collider2Points,
+		collider3Points,
+		collider4Points,
+	} {
+		new_ent.cols = append(new_ent.cols,
+			physics.NewChainShapeCollider(
+				rl.Vector2Zero(),
+				colPoints,
+				physics.BodyTypeStatic,
+			),
+		)
+	}
+
+	// Set the collision category for the colliders
+	for _, col := range new_ent.cols {
+		col.SetCategory(physics.CollisionCategoryEnvironment)
+	}
 
 	return new_ent
 }
@@ -157,4 +181,40 @@ var collider1Points = []rl.Vector2{
 	{X: 125, Y: 151}, {X: 117, Y: 135}, {X: 105, Y: 114},
 	{X: 89, Y: 92}, {X: 73, Y: 72}, {X: 57, Y: 55},
 	{X: 41, Y: 39}, {X: 25, Y: 22},
+}
+
+var collider2Points = []rl.Vector2{
+	{X: 804, Y: 0}, {X: 1020, Y: 7}, {X: 1006, Y: 20}, {X: 988, Y: 28},
+	{X: 969, Y: 33}, {X: 923, Y: 31}, {X: 897, Y: 25}, {X: 873, Y: 17},
+	{X: 846, Y: 9}, {X: 820, Y: 3},
+}
+
+var collider3Points = []rl.Vector2{
+	{X: 1592, Y: 0}, {X: 1861, Y: 10}, {X: 1869, Y: 34}, {X: 1877, Y: 58},
+	{X: 1889, Y: 80}, {X: 1910, Y: 92}, {X: 1910, Y: 418}, {X: 1896, Y: 404},
+	{X: 1879, Y: 396}, {X: 1842, Y: 397}, {X: 1824, Y: 409}, {X: 1812, Y: 429},
+	{X: 1811, Y: 467}, {X: 1815, Y: 492}, {X: 1821, Y: 515}, {X: 1833, Y: 535},
+	{X: 1855, Y: 547}, {X: 1891, Y: 540}, {X: 1905, Y: 520}, {X: 1911, Y: 500},
+	{X: 1916, Y: 473}, {X: 1908, Y: 826}, {X: 1890, Y: 834}, {X: 1874, Y: 842},
+	{X: 1852, Y: 854}, {X: 1828, Y: 870}, {X: 1806, Y: 886}, {X: 1780, Y: 901},
+	{X: 1737, Y: 900}, {X: 1718, Y: 892}, {X: 1703, Y: 884}, {X: 1683, Y: 872},
+	{X: 1664, Y: 860}, {X: 1650, Y: 852}, {X: 1635, Y: 844}, {X: 1613, Y: 836},
+	{X: 1586, Y: 830}, {X: 1559, Y: 824}, {X: 1533, Y: 812}, {X: 1515, Y: 794},
+	{X: 1499, Y: 773}, {X: 1483, Y: 752}, {X: 1467, Y: 733}, {X: 1451, Y: 715},
+	{X: 1435, Y: 695}, {X: 1423, Y: 676}, {X: 1415, Y: 659}, {X: 1408, Y: 635},
+	{X: 1410, Y: 599}, {X: 1422, Y: 578}, {X: 1441, Y: 562}, {X: 1466, Y: 546},
+	{X: 1488, Y: 530}, {X: 1507, Y: 513}, {X: 1523, Y: 494}, {X: 1539, Y: 471},
+	{X: 1555, Y: 444}, {X: 1567, Y: 422}, {X: 1575, Y: 401}, {X: 1583, Y: 373},
+	{X: 1591, Y: 350}, {X: 1603, Y: 328}, {X: 1619, Y: 308}, {X: 1635, Y: 292},
+	{X: 1652, Y: 280}, {X: 1666, Y: 272}, {X: 1683, Y: 264}, {X: 1704, Y: 258},
+	{X: 1745, Y: 259}, {X: 1764, Y: 262}, {X: 1789, Y: 263}, {X: 1812, Y: 252},
+	{X: 1819, Y: 219}, {X: 1816, Y: 196}, {X: 1810, Y: 175}, {X: 1797, Y: 156},
+	{X: 1776, Y: 140}, {X: 1752, Y: 124}, {X: 1733, Y: 108}, {X: 1717, Y: 91},
+	{X: 1701, Y: 73}, {X: 1685, Y: 55}, {X: 1668, Y: 39}, {X: 1649, Y: 23},
+	{X: 1629, Y: 11},
+}
+
+var collider4Points = []rl.Vector2{
+	{X: 1778, Y: 1064}, {X: 1817, Y: 1067}, {X: 1842, Y: 1075},
+	{X: 1748, Y: 1074},
 }

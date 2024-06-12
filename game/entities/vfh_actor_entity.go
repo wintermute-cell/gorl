@@ -7,7 +7,6 @@ import (
 	"gorl/fw/core/store"
 	"gorl/fw/physics"
 	"gorl/fw/util"
-	"gorl/fw/util/easing"
 	"gorl/game/code/colorscheme"
 	"image/color"
 	"math"
@@ -27,44 +26,57 @@ type VfhActorEntity struct {
 	forward       rl.Vector2
 	rayDirections []rl.Vector2
 	rayHits       []physics.RaycastHit
+	vfHistogram   []rl.Vector2
+	adjustedVFH   []rl.Vector2
 	visionRange   float32
 	goal          rl.Vector2
 	mainCamera    *CameraEntity
+	collider      *physics.Collider
+	isCrashed     bool
 
-	selfColor color.RGBA
-	rayColor  color.RGBA
+	selfColor     color.RGBA
+	rayColor      color.RGBA
+	adjustedColor color.RGBA
 
 	constructedMapData []color.RGBA
 	constructedMap     rl.Texture2D
 
-	// Showcase trigger flags
-	hasRays      bool
-	rayFade      float32
-	isRotating   bool
-	isDrawingMap bool
-	isHalting    bool
+	// Animation flags
+	simpleCostFunc bool
 }
 
 // NewVfhActorEntity creates a new instance of the VfhActorEntity.
 func NewVfhActorEntity(position rl.Vector2, rayAmount int32, visionAngle, visionRange float32) *VfhActorEntity {
-	// NOTE: you can modify the constructor to take any parameters you need to
-	// initialize the entity.
-	new_ent := &VfhActorEntity{
-		sprite:      rl.LoadTexture("robot_small.png"),
-		Entity:      entities.NewEntity("VfhActorEntity", position, 0, rl.Vector2One()),
-		forward:     rl.NewVector2(1, 0),
-		visionRange: visionRange,
-		selfColor:   colorscheme.Colorscheme.Color01.ToRGBA(),
-		rayColor:    colorscheme.Colorscheme.Color06.ToRGBA(),
+	if rayAmount%2 == 0 {
+		logging.Warning("Ray amount should be an odd number, so there is ray pointing straight forward! Adding 1 to the ray amount.")
+		rayAmount = rayAmount + 1
 	}
+	new_ent := &VfhActorEntity{
+		sprite:        rl.LoadTexture("robot_small.png"),
+		Entity:        entities.NewEntity("VfhActorEntity", position, 0, rl.Vector2One()),
+		forward:       rl.NewVector2(1, 0),
+		visionRange:   visionRange,
+		selfColor:     colorscheme.Colorscheme.Color01.ToRGBA(),
+		rayColor:      colorscheme.Colorscheme.Color06.ToRGBA(),
+		adjustedColor: colorscheme.Colorscheme.Color07.ToRGBA(),
+		collider:      physics.NewCircleCollider(position, 6, physics.BodyTypeDynamic),
+	}
+
+	new_ent.collider.SetCallbacks(
+		map[physics.CollisionCategory]physics.CollisionCallback{
+			physics.CollisionCategoryEnvironment: func() {
+				logging.Info("ACTOR CRASHED")
+				new_ent.isCrashed = true
+				new_ent.selfColor = colorscheme.Colorscheme.Color10.ToRGBA()
+			},
+		},
+	)
 
 	// fill the image with transparent black pixels
 	imgData := make([]byte, 1920*1080*4)
 	emptyImg := rl.NewImage(imgData, 1920, 1080, 1, rl.UncompressedR8g8b8a8)
 	new_ent.constructedMap = rl.LoadTextureFromImage(emptyImg)
 	new_ent.constructedMapData = make([]color.RGBA, 1920*1080)
-
-	new_ent.rayColor.A = 0 // We fade this in
 
 	anglePerRay := visionAngle / float32(rayAmount-1)
 	new_ent.rayDirections = make([]rl.Vector2, rayAmount)
@@ -73,6 +85,8 @@ func NewVfhActorEntity(position rl.Vector2, rayAmount int32, visionAngle, vision
 		new_ent.rayDirections[i] = rl.Vector2Rotate(rl.NewVector2(1, 0), (anglePerRay*rl.Deg2rad)*float32(i)-centerOffset)
 	}
 	new_ent.rayHits = make([]physics.RaycastHit, rayAmount, rayAmount)
+	new_ent.vfHistogram = make([]rl.Vector2, rayAmount, rayAmount)
+	new_ent.adjustedVFH = make([]rl.Vector2, rayAmount, rayAmount)
 
 	return new_ent
 }
@@ -100,15 +114,13 @@ func (ent *VfhActorEntity) Update() {
 	// Update logic for the entity per frame
 	// ...
 
-	const rayFadeSpeed = 0.5
-	if ent.hasRays {
-		ent.rayFade = util.Min(ent.rayFade+rl.GetFrameTime(), 0.999)
-		ent.rayColor.A = util.Min(255, uint8(easing.QuadOut(ent.rayFade, 1, 255, 1)))
+	if ent.isCrashed {
+		return
 	}
 
-	if ent.isRotating && (!ent.isHalting) {
-		ent.SetRotation(ent.GetRotation() + rl.GetFrameTime()*20)
-	}
+	ent.forward = rl.Vector2Rotate(rl.NewVector2(1, 0), ent.GetRotation()*rl.Deg2rad)
+
+	const rayFadeSpeed = 0.5
 
 	// make sure we have the camera
 	if ent.mainCamera == nil {
@@ -120,25 +132,43 @@ func (ent *VfhActorEntity) Update() {
 
 	for idx, rayDir := range ent.rayDirections {
 		rayDir = rl.Vector2Rotate(rayDir, ent.GetRotation()*rl.Deg2rad)
-		hit := physics.Raycast(ent.GetPosition(), rayDir, ent.visionRange, physics.CollisionCategoryAll)
+		hit := physics.Raycast(ent.GetPosition(), rayDir, ent.visionRange, physics.CollisionCategoryEnvironment)
 		if len(hit) > 0 {
 			ent.rayHits[idx] = hit[0]
+			distToIntersection := rl.Vector2Distance(ent.GetPosition(), hit[0].IntersectionPoint)
+			ent.vfHistogram[idx] = rl.Vector2Scale(rayDir, distToIntersection)
 
 			// Update the constructed map
-			if ent.isDrawingMap {
-				hitPos := hit[0].IntersectionPoint
-				hitPos.X = util.Clamp(hitPos.X, 0, 1919)
-				hitPos.Y = util.Clamp(hitPos.Y, 0, 1079)
-				idx := int(hitPos.Y)*1920 + int(hitPos.X)
-				ent.constructedMapData[idx] = colorscheme.Colorscheme.Color04.ToRGBA()
-			}
+			hitPos := hit[0].IntersectionPoint
+			hitPos.X = util.Clamp(hitPos.X, 0, 1919)
+			hitPos.Y = util.Clamp(hitPos.Y, 0, 1079)
+			idx := int(hitPos.Y)*1920 + int(hitPos.X)
+			ent.constructedMapData[idx] = colorscheme.Colorscheme.Color04.ToRGBA()
 		} else {
 			ent.rayHits[idx] = physics.RaycastHit{}
+			ent.vfHistogram[idx] = rl.Vector2Scale(rayDir, ent.visionRange)
 		}
 	}
 
 	// Make the texture match the map data
 	rl.UpdateTexture(ent.constructedMap, ent.constructedMapData)
+
+	// Steering logic
+	if ent.simpleCostFunc {
+		optimalDir := ent.VFHCostFunction(ent.vfHistogram)
+		angleToOptimal := rl.Vector2Angle(ent.forward, optimalDir)
+		ent.SetRotation(ent.GetRotation() + angleToOptimal)
+	} else {
+		ent.SetRotation(ent.GetRotation() + 10*rl.GetFrameTime())
+	}
+
+	// Move forward every frame
+	moveSpeed := float32(30)
+	curPos := ent.GetPosition()
+	moveDelta := rl.Vector2Scale(ent.forward, moveSpeed*rl.GetFrameTime())
+	newPos := rl.Vector2Add(curPos, moveDelta)
+	ent.SetPosition(newPos)
+	ent.collider.SetPosition(newPos)
 }
 
 func (ent *VfhActorEntity) Draw() {
@@ -147,17 +177,20 @@ func (ent *VfhActorEntity) Draw() {
 	rl.DrawTexture(ent.constructedMap, 0, 0, rl.White)
 
 	// Draw the rays
-	for idx, rayDir := range ent.rayDirections {
-		rayDir = rl.Vector2Rotate(rayDir, ent.GetRotation()*rl.Deg2rad)
-		distToHit := float32(math.MaxFloat32)
-		if ent.rayHits[idx] != (physics.RaycastHit{}) {
-			distToHit = rl.Vector2Distance(ent.GetPosition(), ent.rayHits[idx].IntersectionPoint)
-		}
-		scaledRay := rl.Vector2Scale(rayDir, util.Min(distToHit, ent.visionRange))
+	for _, rayDir := range ent.vfHistogram {
 		rl.DrawLineV(
 			ent.GetPosition(),
-			rl.Vector2Add(ent.GetPosition(), scaledRay),
+			rl.Vector2Add(ent.GetPosition(), rayDir),
 			ent.rayColor,
+		)
+	}
+
+	// Draw the adjusted histogram
+	for _, rayDir := range ent.adjustedVFH {
+		rl.DrawLineV(
+			ent.GetPosition(),
+			rl.Vector2Add(ent.GetPosition(), rayDir),
+			ent.adjustedColor,
 		)
 	}
 
@@ -200,16 +233,83 @@ func (ent *VfhActorEntity) OnInputEvent(event *input.InputEvent) bool {
 	}
 
 	if event.Action == input.ActionNextAnimation {
-		if !ent.hasRays {
-			ent.hasRays = true
-		} else if !ent.isRotating {
-			ent.isRotating = true
-		} else if !ent.isDrawingMap {
-			ent.isDrawingMap = true
-		} else if !ent.isHalting {
-			ent.isHalting = true
+		if !ent.simpleCostFunc {
+			ent.simpleCostFunc = true
 		}
 	}
 
 	return true
+}
+
+// VFHCostFunction selects the most optimal direction to move towards, given a
+// polar histogram of the environment.
+func (ent *VfhActorEntity) VFHCostFunction(vfh []rl.Vector2) rl.Vector2 {
+
+	// Iterate through the histogram, starting from the middle, since the
+	// middle is the direction we're currently facing.
+
+	vfh = ent.EnlargementFunction(vfh, 10)
+	ent.adjustedVFH = vfh
+
+	mid := len(vfh) / 2
+	selection := vfh[mid]
+	for i := mid; i >= 0; i-- {
+		leftIdx := mid - i
+		rightIdx := mid + i
+
+		// Check the left side
+		left := vfh[leftIdx]
+		leftLen := rl.Vector2Length(left)
+		if leftLen >= rl.Vector2Length(selection) {
+			selection = left
+		}
+
+		// Check the right side
+		right := vfh[rightIdx]
+		rightLen := rl.Vector2Length(right)
+		if rightLen >= rl.Vector2Length(selection) {
+			selection = right
+		}
+
+	}
+
+	return selection
+}
+
+func (ent *VfhActorEntity) EnlargementFunction(vfh []rl.Vector2, robotRadius int32) []rl.Vector2 {
+	// 1. Gather all detected obstacle points
+	obstaclePoints := make([]rl.Vector2, 0)
+	for idx := range vfh {
+		if ent.rayHits[idx] != (physics.RaycastHit{}) { // This ray hit something
+			obstaclePoints = append(obstaclePoints, ent.rayHits[idx].IntersectionPoint)
+		}
+	}
+
+	// 2. Calculate an angular range `gamma` around each obstacle point
+	// Calculated as in the paper: http://www.cs.cmu.edu/~iwan/papers/vfh+.pdf (page 2)
+	gammas := make([]float32, 0)
+	clearance := 10.0 // This is the minimum clearance between the robot and the obstacle, d_s in the paper
+	for idx := range obstaclePoints {
+		gammaRad := math.Asin((float64(robotRadius) + clearance) / float64(rl.Vector2Length(vfh[idx])))
+		gammas = append(gammas, float32(gammaRad))
+	}
+
+	// 3. Iterate over vfh and set vfh[i]=0 the angle between vfh[i] and any
+	// vector pointing to an obstacle point is \leq than the gamma of that
+	// obstacle point.
+	for idx := range vfh {
+		for i := range obstaclePoints {
+			// Calculate the angle between the obstacle point and the vfh vector
+			obstacleDir := rl.Vector2Subtract(obstaclePoints[i], ent.GetPosition())
+			angleRad := util.Abs(rl.Vector2Angle(vfh[idx], obstacleDir))
+			if angleRad <= gammas[i] {
+				vfh[idx] = rl.Vector2Zero()
+			} else {
+				// Here we just leave the vfh vector as it is.
+				// In the paper this is represented with a multiplication by 1.
+			}
+		}
+	}
+
+	return vfh
 }
