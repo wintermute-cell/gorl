@@ -3,6 +3,7 @@ package entities
 import (
 	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_event"
+	"math/rand"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -34,7 +35,7 @@ func NewRobotEntity() *RobotEntity {
 }
 
 func (ent *RobotEntity) Init() {
-	ent.speed = 200
+	ent.speed = float32(rand.Int()%500 + 50)
 	// TODO: remove
 	ent.direction = rl.NewVector2(4, 1)
 	ent.direction = rl.Vector2Normalize(ent.direction)
@@ -67,9 +68,9 @@ func (ent *RobotEntity) GetTilePosition() rl.Vector2 {
 	return tilePosition
 }
 
-// TODO: Add a vector2 to the vectorpool and calculate the resulting direction.
+// TODO: Add a vector2 to the vectorpool (?) and calculate the resulting direction.
 // For now this is just like SetDirection(rl.Vector2) would be
 func (ent *RobotEntity) AddDirectionVector(dir rl.Vector2) {
-	ent.direction = dir
+	// TODO: steering behaviour
 	ent.direction = rl.Vector2Normalize(dir)
 }

@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"fmt"
 	"gorl/fw/core/entities"
 	"gorl/fw/core/gem"
 	input "gorl/fw/core/input/input_event"
@@ -55,7 +56,8 @@ func (ent *GridGraphEntity) Update() {
 		// if the flowVector is (0, 0), and the position of the robot is not at
 		// the target, we are stuck at some corner, so we add the same speed again
 		if ent.Gg.CurrentTarget != nil && rl.Vector2Equals(robotEntity.GetTilePosition(), ent.Gg.CurrentTarget.Coordinate) {
-			robotEntity.AddDirectionVector(robotEntity.direction)
+			// robotEntity.AddDirectionVector(robotEntity.direction)
+			robotEntity.AddDirectionVector(rl.Vector2Zero())
 		} else {
 			robotEntity.AddDirectionVector(flowVector)
 		}
@@ -198,8 +200,10 @@ func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
 	sclMousePos = rl.NewVector2(float32(int(sclMousePos.X)), float32(int(sclMousePos.Y)))
 
 	if event.Action == input.ActionClickDown {
+		fmt.Println("inpnut")
 		ent.Gg.RemoveUnreachableTiles(sclMousePos)
 		ent.Gg.Dijkstra(sclMousePos)
+		fmt.Println("after input")
 	}
 	if event.Action == input.ActionPlaceObstacle {
 		ent.Gg.SetObstacle(sclMousePos)
@@ -342,12 +346,12 @@ func NewGridGraph(width int, height int) *GridGraph {
 // of all other tiles to the target. The algorithm will fail, if there are
 // encircled tiles present. Call RemoveUnreachableTiles to avoid that problem
 // and declare these encircled paths as obstacles.
-// FIXME: when calculating the distance, diagonals should only be considered if there is no obstacle at the corner tile
 func (gg *GridGraph) Dijkstra(target rl.Vector2) {
 	// target is a raw mouse position, we need to cast it to an int
 	targetScaled := rl.NewVector2(float32(int(target.X)), float32(int(target.Y)))
 	// Only run the algorithm if therp is a target
 	if targetVertex, ok := gg.VertexMap[targetScaled]; ok {
+		fmt.Println("target should be valid")
 		// set the target if it is valid
 		gg.CurrentTarget = targetVertex
 		// reset dijkstra color, distance, predecessor and closest neighbour
@@ -426,7 +430,12 @@ func (gg *GridGraph) Dijkstra(target rl.Vector2) {
 // The Dijkstra algorithm can only calculate the distance to the target if it is reachable, if a tile can
 // not reach the target, the algorithm will fail. Call this function before Dijkstra to ensure that unreachable
 // tiles will be removed (set as an obstacle), to avoid this fail.
+// position is expected to be already scaled to a grid position
 func (gg *GridGraph) RemoveUnreachableTiles(position rl.Vector2) {
+	// if the tile is not in the VertexMap (already removed), do nothing
+	if _, ok := gg.VertexMap[position]; !ok {
+		return
+	}
 	// nodes that are connectet to position
 	var reachableNodes []*Vertex
 	// nodes that are neighbours of the current node, but not yet completely checked
@@ -528,7 +537,8 @@ func (gg *GridGraph) SetObstacle(position rl.Vector2) {
 }
 
 // Returns the direction a robot should take (if it is
-// insed a valid vertex of the grid graph), otherwise return Vector2Zero
+// inside a valid vertex of the grid graph), otherwise return Vector2Zero
+// pos is a screen space vector
 func (gg *GridGraph) GetFlowVector(pos rl.Vector2) rl.Vector2 {
 	// determine which tile the robot is on
 	tilePosition := rl.Vector2Scale(pos, 1/40.0)
@@ -540,8 +550,6 @@ func (gg *GridGraph) GetFlowVector(pos rl.Vector2) rl.Vector2 {
 	// return the vector to the closest neighbour, if there is one
 	if vert, ok := gg.VertexMap[tilePosition]; ok {
 		if vert.ClosestNeighbour != nil {
-			// fmt.Println("going from:", vert.Coordinate)
-			// fmt.Println("going to:", vert.ClosestNeighbour.Coordinate)
 			direction = rl.Vector2Subtract(vert.ClosestNeighbour.Coordinate, vert.Coordinate)
 		}
 	}

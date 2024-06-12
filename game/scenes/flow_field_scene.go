@@ -6,6 +6,7 @@ import (
 	"gorl/fw/core/settings"
 	"gorl/fw/modules/scenes"
 	"gorl/game/entities"
+	"math/rand"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -40,19 +41,10 @@ func (scn *FlowFieldScene) Init() {
 		for j := range 10 {
 			testRobot := entities.NewRobotEntity()
 			testRobot.SetPosition(rl.NewVector2(float32(i+10)*40, float32(j)*40))
-			testRobot.Color = rl.NewColor(uint8(255-i*10), uint8(255-j*10), 255, 255)
+			testRobot.Color = rl.NewColor(uint8(200-rand.Int()%100), uint8(255-rand.Int()%150), 0, 255)
 			gem.Append(gridGraph, testRobot)
 		}
 	}
-	// testRobot1 := entities.NewRobotEntity()
-	// testRobot2 := entities.NewRobotEntity()
-	// testRobot3 := entities.NewRobotEntity()
-	// testRobot1.SetPosition(rl.NewVector2(405, 10))
-	// testRobot2.SetPosition(rl.NewVector2(10, 10))
-	// testRobot3.SetPosition(rl.NewVector2(10, 130))
-	// gem.Append(gridGraph, testRobot1)
-	// gem.Append(gridGraph, testRobot2)
-	// gem.Append(gridGraph, testRobot3)
 
 }
 
