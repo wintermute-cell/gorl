@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"fmt"
 	"gorl/fw/core/entities"
 	"gorl/fw/core/gem"
 	input "gorl/fw/core/input/input_event"
@@ -18,7 +17,7 @@ var _ entities.IEntity = &GridGraphEntity{}
 
 // GridGraph Entity
 type GridGraphEntity struct {
-	*entities.Entity // Required!
+	*entities.Entity // Required!j
 	Gg               *GridGraph
 }
 
@@ -45,13 +44,20 @@ func (ent *GridGraphEntity) Deinit() {
 }
 
 func (ent *GridGraphEntity) Update() {
-	fmt.Println("update")
-	fmt.Println("len", len(gem.GetChildren(ent)))
 	for _, robot := range gem.GetChildren(ent) {
-		fmt.Println("inseide")
 		robotEntity, ok := robot.(*RobotEntity)
-		if ok {
-			fmt.Println("dir", robotEntity.direction) // ERROR
+		if !ok {
+			// ERROR
+		}
+		flowVector := ent.Gg.GetFlowVector(robotEntity.GetPosition())
+
+		// check for target != nil, because in that case dijkstra has not been called yet
+		// if the flowVector is (0, 0), and the position of the robot is not at
+		// the target, we are stuck at some corner, so we add the same speed again
+		if ent.Gg.CurrentTarget != nil && rl.Vector2Equals(robotEntity.GetTilePosition(), ent.Gg.CurrentTarget.Coordinate) {
+			robotEntity.AddDirectionVector(robotEntity.direction)
+		} else {
+			robotEntity.AddDirectionVector(flowVector)
 		}
 	}
 }
@@ -179,12 +185,13 @@ const (
 type GridGraph struct {
 	// Vertices  []*Vertex NOTE: because I only need a grid graph that has coordinates, the vertices[] are not needed,
 	// NOTE: they are included in the VertexMap
-	Width      int
-	Height     int
-	VertexMap  map[rl.Vector2]*Vertex
-	TileSize   int32
-	DrawOffset rl.Vector2
-	TextSize   int
+	Width         int
+	Height        int
+	VertexMap     map[rl.Vector2]*Vertex
+	TileSize      int32
+	DrawOffset    rl.Vector2
+	TextSize      int
+	CurrentTarget *Vertex
 }
 
 // A Vertex is a node that belongs to a graph and can have an arbitrary number
@@ -304,6 +311,8 @@ func (gg *GridGraph) Dijkstra(target rl.Vector2) {
 	targetScaled := rl.NewVector2(float32(int(target.X)), float32(int(target.Y)))
 	// Only run the algorithm if therp is a target
 	if targetVertex, ok := gg.VertexMap[targetScaled]; ok {
+		// set the target if it is valid
+		gg.CurrentTarget = targetVertex
 		// reset dijkstra color, distance, predecessor and closest neighbour
 		for _, vertex := range gg.VertexMap {
 			vertex.Distance = math.MaxInt
@@ -353,12 +362,10 @@ func (gg *GridGraph) Dijkstra(target rl.Vector2) {
 				if nVert != nil && nVert.Distance < closestVertex.Distance {
 					nDirX := nVert.Coordinate.X - v.Coordinate.X
 					nDirY := nVert.Coordinate.Y - v.Coordinate.Y
-					if _, ok := gg.VertexMap[rl.NewVector2(nDirX, nDirY)]; ok {
-						if nDirX == 0 || nDirY == 0 {
-							preferredNeighbour = gg.VertexMap[rl.NewVector2(nDirX, nDirY)]
-						}
-						closestVertex = gg.VertexMap[rl.NewVector2(nDirX, nDirY)]
+					if nDirX == 0 || nDirY == 0 {
+						preferredNeighbour = nVert
 					}
+					closestVertex = nVert
 				}
 			}
 			// check for distance != 0 to exclude the target itsel
@@ -437,12 +444,24 @@ func (gg *GridGraph) SetObstacle(position rl.Vector2) {
 }
 
 // Returns the direction a robot should take (if it is
-// insed a valid vertex of the grid graph)
+// insed a valid vertex of the grid graph), otherwise return Vector2Zero
 func (gg *GridGraph) GetFlowVector(pos rl.Vector2) rl.Vector2 {
-	fmt.Println("pos", pos)
-	tilePosition := rl.NewVector2(float32(int(pos.X)), float32(int(pos.Y)))
-	fmt.Println("tile:", tilePosition)
-	return rl.Vector2Zero()
+	// determine which tile the robot is on
+	tilePosition := rl.Vector2Scale(pos, 1/40.0)
+	tilePosition = rl.NewVector2(
+		float32(int(tilePosition.X)),
+		float32(int(tilePosition.Y)),
+	)
+	direction := rl.Vector2Zero()
+	// return the vector to the closest neighbour, if there is one
+	if vert, ok := gg.VertexMap[tilePosition]; ok {
+		if vert.ClosestNeighbour != nil {
+			// fmt.Println("going from:", vert.Coordinate)
+			// fmt.Println("going to:", vert.ClosestNeighbour.Coordinate)
+			direction = rl.Vector2Subtract(vert.ClosestNeighbour.Coordinate, vert.Coordinate)
+		}
+	}
+	return direction
 }
 
 // Takes an black/white image and converts it into a silce of vectors which

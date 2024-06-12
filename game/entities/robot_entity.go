@@ -17,6 +17,7 @@ type RobotEntity struct {
 	// Custom Fields
 	speed     float32
 	direction rl.Vector2
+	Color     rl.Color
 }
 
 // NewRobotEntity creates a new instance of the RobotEntity.
@@ -33,7 +34,8 @@ func NewRobotEntity() *RobotEntity {
 }
 
 func (ent *RobotEntity) Init() {
-	ent.speed = 20
+	ent.speed = 200
+	// TODO: remove
 	ent.direction = rl.NewVector2(4, 1)
 	ent.direction = rl.Vector2Normalize(ent.direction)
 }
@@ -48,11 +50,21 @@ func (ent *RobotEntity) Update() {
 }
 
 func (ent *RobotEntity) Draw() {
-	rl.DrawCircleV(ent.GetPosition(), 20, rl.Green)
+	rl.DrawCircleV(ent.GetPosition(), 10, ent.Color)
 }
 
 func (ent *RobotEntity) OnInputEvent(event *input.InputEvent) bool {
 	return true
+}
+
+// Returns the tile position as a vector2
+func (ent *RobotEntity) GetTilePosition() rl.Vector2 {
+	tilePosition := rl.Vector2Scale(ent.GetPosition(), 1/40.0)
+	tilePosition = rl.NewVector2(
+		float32(int(tilePosition.X)),
+		float32(int(tilePosition.Y)),
+	)
+	return tilePosition
 }
 
 // TODO: Add a vector2 to the vectorpool and calculate the resulting direction.
