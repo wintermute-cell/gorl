@@ -40,6 +40,20 @@ func NewCameraEntity(
 	return new_ent
 }
 
+// ============================================================================
+// Utilities
+// ============================================================================
+
+// ScreenToWorld converts a screen position to a world position.
+func (ent *CameraEntity) ScreenToWorld(screenPos rl.Vector2) rl.Vector2 {
+	return ent.camera.ScreenToWorld(screenPos)
+}
+
+// WorldToScreen converts a world position to a screen position.
+func (ent *CameraEntity) WorldToScreen(worldPos rl.Vector2) rl.Vector2 {
+	return ent.camera.WorldToScreen(worldPos)
+}
+
 func (ent *CameraEntity) Init() {
 	// Initialization logic for the entity
 	// ...
@@ -54,9 +68,12 @@ func (ent *CameraEntity) Update() {
 
 	// 1. Apply the absolute transform of the camera entity to the render camera.
 	absTransform := gem.GetAbsoluteTransform(ent)
-	ent.camera.SetTarget(absTransform.GetPosition())
-	ent.camera.SetRotation(absTransform.GetRotation())
-	ent.camera.SetZoom(absTransform.GetScale().X)
+	//ent.camera.SetTarget(absTransform.GetPosition())
+	//ent.camera.SetRotation(absTransform.GetRotation())
+	//ent.camera.SetZoom(absTransform.GetScale().X)
+	ent.ctb.Position = datastructures.NewMaybe(absTransform.GetPosition())
+	ent.ctb.Rotation = datastructures.NewMaybe(absTransform.GetRotation())
+	ent.ctb.Zoom = datastructures.NewMaybe(absTransform.GetScale().X)
 
 	// 2. Apply the cameraTransformationBuffer on top of that.
 	ent.ctb.flushToCamera(ent.camera)
@@ -73,6 +90,22 @@ func (ent *CameraEntity) OnInputEvent(event *input.InputEvent) bool {
 	// Return false if the event was consumed and should not be propagated
 	// further.
 	// ...
+
+	const moveSpeed = 100
+
+	if event.Action == input.ActionMoveLeft {
+		ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.NewVector2(-moveSpeed*rl.GetFrameTime(), 0)))
+	}
+	if event.Action == input.ActionMoveRight {
+		ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.NewVector2(moveSpeed*rl.GetFrameTime(), 0)))
+	}
+	if event.Action == input.ActionMoveUp {
+		ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.NewVector2(0, -moveSpeed*rl.GetFrameTime())))
+	}
+	if event.Action == input.ActionMoveDown {
+		ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.NewVector2(0, moveSpeed*rl.GetFrameTime())))
+	}
+
 	return true
 }
 

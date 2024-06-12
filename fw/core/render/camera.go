@@ -54,6 +54,16 @@ func (c *Camera) Destroy() {
 	rl.UnloadRenderTexture(c.renderTarget.renderTexture)
 }
 
+// ScreenToWorld converts a screen position to a world position.
+func (c *Camera) ScreenToWorld(screenPos rl.Vector2) rl.Vector2 {
+	return rl.GetWorldToScreen2D(screenPos, *c.rlcamera)
+}
+
+// WorldToScreen converts a world position to a screen position.
+func (c *Camera) WorldToScreen(worldPos rl.Vector2) rl.Vector2 {
+	return rl.GetWorldToScreen2D(worldPos, *c.rlcamera)
+}
+
 // SetTarget sets the target (position) of the camera.
 func (c *Camera) SetTarget(target rl.Vector2) {
 	c.rlcamera.Target = target

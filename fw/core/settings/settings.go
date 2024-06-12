@@ -47,10 +47,10 @@ func UseFallbackSettings() {
 		TargetFps:  144,
 		Fullscreen:  false,
 		EnableCrtEffect:  true,
-		MouseSensitivity:  1.0,
-		SoundVolume:  0.5,
-		LogPath:  "logs/",
-		EnableGamepad:  false,
+		MouseSensitivity: 1.0,
+		SoundVolume:      0.5,
+		LogPath:          "logs/",
+		EnableGamepad:    false,
 	}
 }
 
