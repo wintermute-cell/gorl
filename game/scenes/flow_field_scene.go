@@ -25,11 +25,14 @@ func (scn *FlowFieldScene) Init() {
 	// gem.Append(scn.GetRoot(), mapEnt)
 
 	testRobot := entities.NewRobotEntity()
-	gem.Append(scn.GetRoot(), testRobot)
+	// gem.Append(scn.GetRoot(), testRobot)
 
 	gridGraph := entities.NewGridGraphEntity()
 	gem.Append(scn.GetRoot(), gridGraph)
 
+	gem.Append(gridGraph, testRobot)
+
+	gridGraph.Gg.GetFlowVector(testRobot.GetPosition())
 	// TODO: robots die direction geben und so
 }
 

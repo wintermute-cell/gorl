@@ -1,7 +1,9 @@
 package entities
 
 import (
+	"fmt"
 	"gorl/fw/core/entities"
+	"gorl/fw/core/gem"
 	input "gorl/fw/core/input/input_event"
 	"image/color"
 	"math"
@@ -17,8 +19,7 @@ var _ entities.IEntity = &GridGraphEntity{}
 // GridGraph Entity
 type GridGraphEntity struct {
 	*entities.Entity // Required!
-	gg               *GridGraph
-	TextSize         int32
+	Gg               *GridGraph
 }
 
 // NewGridGraphEntity creates a new instance of the GridGraphEntity.
@@ -26,17 +27,16 @@ func NewGridGraphEntity() *GridGraphEntity {
 	// NOTE: you can modify the constructor to take any parameters you need to
 	// initialize the entity.
 	new_ent := &GridGraphEntity{
-		Entity:   entities.NewEntity("GridGraphEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
-		gg:       NewGridGraph(100, 100),
-		TextSize: 20,
+		Entity: entities.NewEntity("GridGraphEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
+		Gg:     NewGridGraph(100, 100),
 	}
 	return new_ent
 }
 
 func (ent *GridGraphEntity) Init() {
 	mapImage := rl.LoadImage("./map_thresh.png")
-	ent.gg = NewGridGraph(48, 27)
-	ent.gg.CalculateGridGraphFromImage(mapImage, 40)
+	ent.Gg = NewGridGraph(48, 27)
+	ent.Gg.CalculateGridGraphFromImage(mapImage, 40)
 	// ent.gg.RemoveUnreachableTiles(rl.NewVector2(10, 0))
 	// ent.gg.Dijkstra(rl.NewVector2(10, 0))
 }
@@ -45,6 +45,15 @@ func (ent *GridGraphEntity) Deinit() {
 }
 
 func (ent *GridGraphEntity) Update() {
+	fmt.Println("update")
+	fmt.Println("len", len(gem.GetChildren(ent)))
+	for _, robot := range gem.GetChildren(ent) {
+		fmt.Println("inseide")
+		robotEntity, ok := robot.(*RobotEntity)
+		if ok {
+			fmt.Println("dir", robotEntity.direction) // ERROR
+		}
+	}
 }
 
 func (ent *GridGraphEntity) Draw() {
@@ -52,13 +61,13 @@ func (ent *GridGraphEntity) Draw() {
 	rl.DrawRectangleV(
 		ent.GetPosition(),
 		rl.NewVector2(
-			float32(ent.gg.Width)*float32(ent.gg.TileSize),
-			float32(ent.gg.Height)*float32(ent.gg.TileSize),
+			float32(ent.Gg.Width)*float32(ent.Gg.TileSize),
+			float32(ent.Gg.Height)*float32(ent.Gg.TileSize),
 		),
 		rl.Black,
 	)
 	// TODO: put this in a vertex.GetColor() function
-	for _, vertex := range ent.gg.VertexMap {
+	for _, vertex := range ent.Gg.VertexMap {
 		sclColorVal := vertex.Distance * 20
 		var vertexColor rl.Color
 		if sclColorVal <= 255 {
@@ -88,19 +97,19 @@ func (ent *GridGraphEntity) Draw() {
 		}
 		// draw the rectangle
 		rl.DrawRectangle(
-			int32(vertex.Coordinate.X)*ent.gg.TileSize+int32(ent.GetPosition().X),
-			int32(vertex.Coordinate.Y)*ent.gg.TileSize+int32(ent.GetPosition().Y),
-			int32(ent.gg.TileSize),
-			int32(ent.gg.TileSize),
+			int32(vertex.Coordinate.X)*ent.Gg.TileSize+int32(ent.GetPosition().X),
+			int32(vertex.Coordinate.Y)*ent.Gg.TileSize+int32(ent.GetPosition().Y),
+			int32(ent.Gg.TileSize),
+			int32(ent.Gg.TileSize),
 			vertexColor,
 		)
 		// display the distance if it is not at max value
 		if vertex.Distance != math.MaxInt {
 			rl.DrawText(
 				strconv.Itoa(vertex.Distance),
-				int32(vertex.Coordinate.X)*ent.gg.TileSize+int32(ent.GetPosition().X),
-				int32(vertex.Coordinate.Y)*ent.gg.TileSize+int32(ent.GetPosition().Y),
-				int32(ent.TextSize),
+				int32(vertex.Coordinate.X)*ent.Gg.TileSize+int32(ent.GetPosition().X),
+				int32(vertex.Coordinate.Y)*ent.Gg.TileSize+int32(ent.GetPosition().Y),
+				int32(ent.Gg.TextSize),
 				rl.Black,
 			)
 		}
@@ -109,21 +118,21 @@ func (ent *GridGraphEntity) Draw() {
 	// draw an arrow to the closest neighbour (if there is one) TODO:
 
 	// draw grid
-	for i := range ent.gg.Width + 1 {
+	for i := range ent.Gg.Width + 1 {
 		rl.DrawLine(
-			int32(i)*ent.gg.TileSize+int32(ent.GetPosition().X),
+			int32(i)*ent.Gg.TileSize+int32(ent.GetPosition().X),
 			0+int32(ent.GetPosition().Y),
-			int32(i)*ent.gg.TileSize+int32(ent.GetPosition().X),
-			int32(ent.gg.Height)*ent.gg.TileSize+int32(ent.GetPosition().Y),
+			int32(i)*ent.Gg.TileSize+int32(ent.GetPosition().X),
+			int32(ent.Gg.Height)*ent.Gg.TileSize+int32(ent.GetPosition().Y),
 			rl.Black,
 		)
 	}
-	for i := range ent.gg.Height + 1 {
+	for i := range ent.Gg.Height + 1 {
 		rl.DrawLine(
 			0+int32(ent.GetPosition().X),
-			int32(i)*ent.gg.TileSize+int32(ent.GetPosition().Y),
-			int32(ent.gg.Width)*ent.gg.TileSize+int32(ent.GetPosition().X),
-			int32(i)*ent.gg.TileSize+int32(ent.GetPosition().Y),
+			int32(i)*ent.Gg.TileSize+int32(ent.GetPosition().Y),
+			int32(ent.Gg.Width)*ent.Gg.TileSize+int32(ent.GetPosition().X),
+			int32(i)*ent.Gg.TileSize+int32(ent.GetPosition().Y),
 			rl.Black,
 		)
 	}
@@ -142,16 +151,16 @@ func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
 			rl.GetMousePosition(),
 			ent.GetPosition(),
 		),
-		1/float32(ent.gg.TileSize),
+		1/float32(ent.Gg.TileSize),
 	)
 	sclMousePos = rl.NewVector2(float32(int(sclMousePos.X)), float32(int(sclMousePos.Y)))
 
 	if event.Action == input.ActionClickDown {
-		ent.gg.RemoveUnreachableTiles(sclMousePos)
-		ent.gg.Dijkstra(sclMousePos)
+		ent.Gg.RemoveUnreachableTiles(sclMousePos)
+		ent.Gg.Dijkstra(sclMousePos)
 	}
 	if event.Action == input.ActionPlaceObstacle {
-		ent.gg.SetObstacle(sclMousePos)
+		ent.Gg.SetObstacle(sclMousePos)
 	}
 	return true
 }
@@ -175,6 +184,7 @@ type GridGraph struct {
 	VertexMap  map[rl.Vector2]*Vertex
 	TileSize   int32
 	DrawOffset rl.Vector2
+	TextSize   int
 }
 
 // A Vertex is a node that belongs to a graph and can have an arbitrary number
@@ -198,6 +208,7 @@ func NewGridGraph(width int, height int) *GridGraph {
 	gridGraph.VertexMap = make(map[rl.Vector2]*Vertex)
 	gridGraph.DrawOffset = rl.Vector2Zero()
 	gridGraph.TileSize = 40
+	gridGraph.TextSize = 20
 	// Loop width and height for initializing the array.
 	for x := range width {
 		for y := range height {
@@ -368,11 +379,6 @@ func (gg *GridGraph) Dijkstra(target rl.Vector2) {
 	}
 }
 
-// Returns the direction a robot needs to take, according to the grid graph
-func (gg *GridGraph) GetDirection(position rl.Vector2) rl.Vector2 {
-	return rl.Vector2Zero()
-}
-
 // The Dijkstra algorithm can only calculate the distance to the target if it is reachable, if a tile can
 // not reach the target, the algorithm will fail. Call this function before Dijkstra to ensure that unreachable
 // tiles will be removed (set as an obstacle), to avoid this fail.
@@ -428,6 +434,15 @@ func (gg *GridGraph) SetObstacle(position rl.Vector2) {
 		// remove the vert from the VertexMap itself
 		delete(gg.VertexMap, vert.Coordinate)
 	}
+}
+
+// Returns the direction a robot should take (if it is
+// insed a valid vertex of the grid graph)
+func (gg *GridGraph) GetFlowVector(pos rl.Vector2) rl.Vector2 {
+	fmt.Println("pos", pos)
+	tilePosition := rl.NewVector2(float32(int(pos.X)), float32(int(pos.Y)))
+	fmt.Println("tile:", tilePosition)
+	return rl.Vector2Zero()
 }
 
 // Takes an black/white image and converts it into a silce of vectors which
