@@ -45,6 +45,7 @@ func (scn *VfhScene) Init() {
 	store.Add(actorInfo)
 
 	actor := entities.NewVfhActorEntity(rl.NewVector2(675, 840), 13, 120, 80)
+	actor.SetGoal(rl.NewVector2(430, 650))
 	gem.Append(scn.GetRoot(), actor)
 
 	env := entities.NewEnvironmentEntity()

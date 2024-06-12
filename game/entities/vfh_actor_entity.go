@@ -33,6 +33,7 @@ type VfhActorEntity struct {
 	mainCamera    *CameraEntity
 	collider      *physics.Collider
 	isCrashed     bool
+	optimalDir    rl.Vector2
 
 	selfColor     color.RGBA
 	rayColor      color.RGBA
@@ -43,6 +44,7 @@ type VfhActorEntity struct {
 
 	// Animation flags
 	simpleCostFunc bool
+	isGoalDirected bool
 }
 
 // NewVfhActorEntity creates a new instance of the VfhActorEntity.
@@ -132,14 +134,14 @@ func (ent *VfhActorEntity) Update() {
 
 	for idx, rayDir := range ent.rayDirections {
 		rayDir = rl.Vector2Rotate(rayDir, ent.GetRotation()*rl.Deg2rad)
-		hit := physics.Raycast(ent.GetPosition(), rayDir, ent.visionRange, physics.CollisionCategoryEnvironment)
-		if len(hit) > 0 {
-			ent.rayHits[idx] = hit[0]
-			distToIntersection := rl.Vector2Distance(ent.GetPosition(), hit[0].IntersectionPoint)
+		hits := physics.Raycast(ent.GetPosition(), rayDir, ent.visionRange, physics.CollisionCategoryEnvironment)
+		if len(hits) > 0 {
+			ent.rayHits[idx] = hits[0]
+			distToIntersection := rl.Vector2Distance(ent.GetPosition(), hits[0].IntersectionPoint)
 			ent.vfHistogram[idx] = rl.Vector2Scale(rayDir, distToIntersection)
 
 			// Update the constructed map
-			hitPos := hit[0].IntersectionPoint
+			hitPos := hits[0].IntersectionPoint
 			hitPos.X = util.Clamp(hitPos.X, 0, 1919)
 			hitPos.Y = util.Clamp(hitPos.Y, 0, 1079)
 			idx := int(hitPos.Y)*1920 + int(hitPos.X)
@@ -155,15 +157,15 @@ func (ent *VfhActorEntity) Update() {
 
 	// Steering logic
 	if ent.simpleCostFunc {
-		optimalDir := ent.VFHCostFunction(ent.vfHistogram)
-		angleToOptimal := rl.Vector2Angle(ent.forward, optimalDir)
-		ent.SetRotation(ent.GetRotation() + angleToOptimal)
+		ent.optimalDir = ent.VFHGoalOrientedCostFunction(ent.vfHistogram)
+		angleToOptimal := rl.Vector2Angle(ent.forward, ent.optimalDir)
+		ent.SetRotation(ent.GetRotation() + angleToOptimal*rl.Rad2deg)
 	} else {
 		ent.SetRotation(ent.GetRotation() + 10*rl.GetFrameTime())
 	}
 
 	// Move forward every frame
-	moveSpeed := float32(30)
+	moveSpeed := float32(90)
 	curPos := ent.GetPosition()
 	moveDelta := rl.Vector2Scale(ent.forward, moveSpeed*rl.GetFrameTime())
 	newPos := rl.Vector2Add(curPos, moveDelta)
@@ -193,6 +195,23 @@ func (ent *VfhActorEntity) Draw() {
 			ent.adjustedColor,
 		)
 	}
+
+	// Draw the currently selected direction
+	rl.DrawLineV(
+		ent.GetPosition(),
+		rl.Vector2Add(ent.GetPosition(), ent.optimalDir),
+		rl.Red,
+	)
+
+	// Draw the direction towards the goal
+	goalDirection := rl.Vector2Normalize(
+		rl.Vector2Subtract(ent.goal, ent.GetPosition()),
+	)
+	rl.DrawLineV(
+		ent.GetPosition(),
+		rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(goalDirection, 50)),
+		rl.Green,
+	)
 
 	// Draw the intersection points
 	for _, hit := range ent.rayHits {
@@ -235,6 +254,8 @@ func (ent *VfhActorEntity) OnInputEvent(event *input.InputEvent) bool {
 	if event.Action == input.ActionNextAnimation {
 		if !ent.simpleCostFunc {
 			ent.simpleCostFunc = true
+		} else if !ent.isGoalDirected {
+			ent.isGoalDirected = true
 		}
 	}
 
@@ -260,22 +281,83 @@ func (ent *VfhActorEntity) VFHCostFunction(vfh []rl.Vector2) rl.Vector2 {
 		// Check the left side
 		left := vfh[leftIdx]
 		leftLen := rl.Vector2Length(left)
-		if leftLen >= rl.Vector2Length(selection) {
+		if leftLen >= rl.Vector2Length(selection)-0.0001 { // NOTE: we have to compensate for floating point errors
 			selection = left
 		}
 
 		// Check the right side
 		right := vfh[rightIdx]
 		rightLen := rl.Vector2Length(right)
-		if rightLen >= rl.Vector2Length(selection) {
+		if rightLen >= rl.Vector2Length(selection)-0.0001 {
 			selection = right
 		}
-
 	}
 
 	return selection
 }
 
+// VFHGoalOrientedCostFunction selects the most optimal direction to move towards, given a
+// polar histogram of the environment. It uses direction centrality and alignment with the goal direction as weights.
+func (ent *VfhActorEntity) VFHGoalOrientedCostFunction(vfh []rl.Vector2) rl.Vector2 {
+
+	vfh = ent.EnlargementFunction(vfh, 10)
+	ent.adjustedVFH = vfh
+
+	goalDirection := rl.Vector2Normalize(
+		rl.Vector2Subtract(ent.goal, ent.GetPosition()),
+	)
+
+	mid := len(vfh) / 2
+	selection := vfh[mid]
+	selectionCost := float32(math.MaxFloat32)
+
+	// delta returns the absolute angle between two vectors
+	delta := func(v1, v2 rl.Vector2) float32 {
+		angleRad := rl.Vector2Angle(v1, v2)
+		absRad := util.Abs(angleRad)
+		return absRad
+	}
+
+	for i := mid; i >= 0; i-- {
+		leftIdx := mid - i
+		rightIdx := mid + i
+
+		centrality := delta(vfh[mid], vfh[leftIdx]) // centrality should be equal for both sides
+
+		goalAlignmentLeft := delta(goalDirection, vfh[leftIdx])
+		goalAlignmentRight := delta(goalDirection, vfh[rightIdx])
+		logging.Debug("Goal alignment left: %v", goalAlignmentLeft)
+		logging.Debug("Goal alignment right: %v", goalAlignmentRight)
+
+		left := vfh[leftIdx]
+		leftLen := rl.Vector2Length(left)
+		right := vfh[rightIdx]
+		rightLen := rl.Vector2Length(right)
+
+		centralityFactor := float32(1)
+		alignmentFactor := float32(1)
+
+		leftCost := centralityFactor*centrality + alignmentFactor*goalAlignmentLeft
+		rightCost := centralityFactor*centrality + alignmentFactor*goalAlignmentRight
+
+		if leftLen >= rl.Vector2Length(selection)-0.0001 {
+			if leftCost < selectionCost {
+				selection = left
+				selectionCost = leftCost
+			}
+		}
+		if rightLen >= rl.Vector2Length(selection)-0.0001 {
+			if rightCost < selectionCost {
+				selection = right
+				selectionCost = rightCost
+			}
+		}
+	}
+
+	return selection
+}
+
+// The EnlargementFunction filters the histogram according to the VFH+ paper.
 func (ent *VfhActorEntity) EnlargementFunction(vfh []rl.Vector2, robotRadius int32) []rl.Vector2 {
 	// 1. Gather all detected obstacle points
 	obstaclePoints := make([]rl.Vector2, 0)
