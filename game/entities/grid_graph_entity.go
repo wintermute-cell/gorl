@@ -50,23 +50,28 @@ func (ent *GridGraphEntity) Update() {
 		if !ok {
 			// ERROR
 		}
+		// set the target, in case it is not set
+		if ent.Gg.Target != nil {
+			robotEntity.FinalTarget = rl.Vector2Scale(ent.Gg.Target.Coordinate, 40)
+			// add 20, 20 to find the center of a tile
+			robotEntity.FinalTarget = rl.Vector2Add(robotEntity.FinalTarget, rl.NewVector2(20, 20))
+		}
+
 		flowVector := ent.Gg.GetFlowVector(robotEntity.GetPosition())
 		// if the flowVector is a Vector2Zero, we are either at the target, or drove into a wall,
 		// so we want to stop the vehicle immediately
 		if rl.Vector2Equals(rl.Vector2Zero(), flowVector) {
-			robotEntity.Target = robotEntity.GetPosition()
+			robotEntity.CurrentTarget = robotEntity.GetPosition()
 			robotEntity.Acceleration = rl.Vector2Zero()
 			robotEntity.Velocity = rl.Vector2Zero()
 		}
 
 		// check for target != nil, because in that case dijkstra has not been called yet
-		// if the flowVector is (0, 0), and the position of the robot is not at
-		// the target, we are stuck at some corner, so we add the same speed again
-		if ent.Gg.CurrentTarget != nil && rl.Vector2Equals(robotEntity.GetTilePosition(), ent.Gg.CurrentTarget.Coordinate) {
+		if ent.Gg.Target != nil && rl.Vector2Equals(robotEntity.GetTilePosition(), ent.Gg.Target.Coordinate) {
 			// no acceleration
-			robotEntity.Target = robotEntity.GetPosition()
+			robotEntity.CurrentTarget = robotEntity.GetPosition()
 		} else {
-			robotEntity.Target = rl.Vector2Add(robotEntity.GetPosition(), flowVector)
+			robotEntity.CurrentTarget = rl.Vector2Add(robotEntity.GetPosition(), flowVector)
 			ent.pixelTracks[robotEntity.GetPosition()] = robotEntity.Color
 		}
 	}
@@ -196,10 +201,6 @@ func (ent *GridGraphEntity) Draw() {
 }
 
 func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
-	// Logic to run when an input event is received.
-	// Return false if the event was consumed and should not be propagated
-	// further.
-	// ...
 	if event.Action == input.ActionClickRightHeld {
 		ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.GetMouseDelta()))
 	}
@@ -236,13 +237,13 @@ const (
 type GridGraph struct {
 	// Vertices  []*Vertex NOTE: because I only need a grid graph that has coordinates, the vertices[] are not needed,
 	// NOTE: they are included in the VertexMap
-	Width         int
-	Height        int
-	VertexMap     map[rl.Vector2]*Vertex
-	TileSize      int32
-	DrawOffset    rl.Vector2
-	TextSize      int
-	CurrentTarget *Vertex
+	Width      int
+	Height     int
+	VertexMap  map[rl.Vector2]*Vertex
+	TileSize   int32
+	DrawOffset rl.Vector2
+	TextSize   int
+	Target     *Vertex
 }
 
 // A Vertex is a node that belongs to a graph and can have an arbitrary number
@@ -363,7 +364,7 @@ func (gg *GridGraph) Dijkstra(target rl.Vector2) {
 	// Only run the algorithm if therp is a target
 	if targetVertex, ok := gg.VertexMap[targetScaled]; ok {
 		// set the target if it is valid
-		gg.CurrentTarget = targetVertex
+		gg.Target = targetVertex
 		// reset dijkstra color, distance, predecessor and closest neighbour
 		for _, vertex := range gg.VertexMap {
 			vertex.Distance = math.MaxInt

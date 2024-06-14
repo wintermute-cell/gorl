@@ -52,15 +52,20 @@ func (scn *FlowFieldScene) Init() {
 	// gem.Append(gridGraph, testRobot2)
 	// gem.Append(gridGraph, testRobot3)
 	// gem.Append(gridGraph, testRobot4)
-	counter := 0
-	for k := range gridGraph.Gg.VertexMap {
-		counter++
-		if counter%10 == 0 {
-			testRobot := entities.NewRobotEntity()
-			testRobot.SetPosition(rl.Vector2Add(rl.Vector2Scale(k, 40), rl.NewVector2(20, 20)))
-			gem.Append(gridGraph, testRobot)
-		}
-	}
+
+	robot := entities.NewRobotEntity()
+	robot.SetPosition(rl.NewVector2(10*40+20, 10*40+20))
+	gem.Append(gridGraph, robot)
+
+	// counter := 0
+	// for k := range gridGraph.Gg.VertexMap {
+	// 	counter++
+	// 	if counter%10 == 0 {
+	// 		testRobot := entities.NewRobotEntity()
+	// 		testRobot.SetPosition(rl.Vector2Add(rl.Vector2Scale(k, 40), rl.NewVector2(20, 20)))
+	// 		gem.Append(gridGraph, testRobot)
+	// 	}
+	// }
 
 }
 
