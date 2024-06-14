@@ -31,7 +31,7 @@ func NewRobotEntity() *RobotEntity {
 		Velocity:     rl.Vector2Zero(),
 		Acceleration: rl.Vector2Zero(),
 		Target:       rl.Vector2Zero(),
-		MaximumSpeed: 60,
+		MaximumSpeed: 100,
 		MaximumForce: 0.7,
 		Color:        rl.NewColor(uint8(rand.Int()%255), uint8(rand.Int()%255), uint8(rand.Int()%255), 255),
 	}

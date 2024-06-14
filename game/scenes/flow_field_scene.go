@@ -53,9 +53,9 @@ func (scn *FlowFieldScene) Init() {
 	// gem.Append(gridGraph, testRobot3)
 	// gem.Append(gridGraph, testRobot4)
 	counter := 0
-	for k, _ := range gridGraph.Gg.VertexMap {
+	for k := range gridGraph.Gg.VertexMap {
 		counter++
-		if counter%5 == 0 {
+		if counter%10 == 0 {
 			testRobot := entities.NewRobotEntity()
 			testRobot.SetPosition(rl.Vector2Add(rl.Vector2Scale(k, 40), rl.NewVector2(20, 20)))
 			gem.Append(gridGraph, testRobot)
