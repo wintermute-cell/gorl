@@ -1,14 +1,12 @@
 package entities
 
 import (
-	"fmt"
 	"gorl/fw/core/entities"
 	"gorl/fw/core/gem"
 	input "gorl/fw/core/input/input_event"
 	"image/color"
 	"math"
 	"slices"
-	"strconv"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -20,6 +18,7 @@ var _ entities.IEntity = &GridGraphEntity{}
 type GridGraphEntity struct {
 	*entities.Entity // Required!j
 	Gg               *GridGraph
+	pixelTracks      map[rl.Vector2]rl.Color
 }
 
 // NewGridGraphEntity creates a new instance of the GridGraphEntity.
@@ -27,8 +26,9 @@ func NewGridGraphEntity() *GridGraphEntity {
 	// NOTE: you can modify the constructor to take any parameters you need to
 	// initialize the entity.
 	new_ent := &GridGraphEntity{
-		Entity: entities.NewEntity("GridGraphEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
-		Gg:     NewGridGraph(100, 100),
+		Entity:      entities.NewEntity("GridGraphEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
+		Gg:          NewGridGraph(100, 100),
+		pixelTracks: make(map[rl.Vector2]rl.Color),
 	}
 	return new_ent
 }
@@ -51,15 +51,23 @@ func (ent *GridGraphEntity) Update() {
 			// ERROR
 		}
 		flowVector := ent.Gg.GetFlowVector(robotEntity.GetPosition())
+		// if the flowVector is a Vector2Zero, we are either at the target, or drove into a wall,
+		// so we want to stop the vehicle immediately
+		if rl.Vector2Equals(rl.Vector2Zero(), flowVector) {
+			robotEntity.Target = robotEntity.GetPosition()
+			robotEntity.Acceleration = rl.Vector2Zero()
+			robotEntity.Velocity = rl.Vector2Zero()
+		}
 
 		// check for target != nil, because in that case dijkstra has not been called yet
 		// if the flowVector is (0, 0), and the position of the robot is not at
 		// the target, we are stuck at some corner, so we add the same speed again
 		if ent.Gg.CurrentTarget != nil && rl.Vector2Equals(robotEntity.GetTilePosition(), ent.Gg.CurrentTarget.Coordinate) {
-			// robotEntity.AddDirectionVector(robotEntity.direction)
-			robotEntity.AddDirectionVector(rl.Vector2Zero())
+			// no acceleration
+			robotEntity.Target = robotEntity.GetPosition()
 		} else {
-			robotEntity.AddDirectionVector(flowVector)
+			robotEntity.Target = rl.Vector2Add(robotEntity.GetPosition(), flowVector)
+			ent.pixelTracks[robotEntity.GetPosition()] = robotEntity.Color
 		}
 	}
 }
@@ -112,55 +120,55 @@ func (ent *GridGraphEntity) Draw() {
 			vertexColor,
 		)
 		// display the distance if it is not at max value
-		if vertex.Distance != math.MaxInt {
-			rl.DrawText(
-				strconv.Itoa(vertex.Distance),
-				int32(vertex.Coordinate.X)*ent.Gg.TileSize+int32(ent.GetPosition().X),
-				int32(vertex.Coordinate.Y)*ent.Gg.TileSize+int32(ent.GetPosition().Y),
-				int32(ent.Gg.TextSize),
-				rl.Black,
-			)
-		}
+		// if vertex.Distance != math.MaxInt {
+		// 	rl.DrawText(
+		// 		strconv.Itoa(vertex.Distance),
+		// 		int32(vertex.Coordinate.X)*ent.Gg.TileSize+int32(ent.GetPosition().X),
+		// 		int32(vertex.Coordinate.Y)*ent.Gg.TileSize+int32(ent.GetPosition().Y),
+		// 		int32(ent.Gg.TextSize),
+		// 		rl.Black,
+		// 	)
+		// }
 
 	}
-	// draw an arrow to the closest neighbour (if there is one) TODO:
-	for _, vert := range ent.Gg.VertexMap {
-		if vert.ClosestNeighbour != nil {
-			// NOTE: HARDCODED!
-			scale := 40
-			arrowTipDirection := rl.Vector2Subtract(vert.ClosestNeighbour.Coordinate, vert.Coordinate)
-			arrowTipDirection = rl.Vector2Scale(arrowTipDirection, float32(scale))
-			// arrowTipDirection,
-			// rl.NewVector2(float32(scale/2), float32(scale/2)),
-			// )
-			// arrowTipPosition = rl.Vector2Scale(arrowTipDirection, 10)
-			// arrowTipPosition = rl.Vector2Scale(vert.Coordinate, float32(scale))
-
-			// convert to world space
-			arrowOrigin := rl.Vector2Scale(vert.Coordinate, float32(scale))
-			// mid shift
-			arrowOrigin = rl.Vector2Add(arrowOrigin, rl.NewVector2(float32(scale)/2, float32(scale)/2))
-
-			arrowTipPosition := rl.Vector2Add(
-				arrowOrigin,
-				rl.Vector2Scale(arrowTipDirection, 0.3),
-			)
-			// rl.Vector2Scale(arrowTipDirection, float32(scale)/3),
-			// )
-
-			rl.DrawLineEx(
-				arrowOrigin,
-				arrowTipPosition,
-				3,
-				rl.Black,
-			)
-			rl.DrawCircleV(
-				arrowTipPosition,
-				4,
-				rl.Black,
-			)
-		}
-	}
+	// draw the arrows
+	// for _, vert := range ent.Gg.VertexMap {
+	// 	if vert.ClosestNeighbour != nil {
+	// 		// NOTE: HARDCODED!
+	// 		scale := 40
+	// 		arrowTipDirection := rl.Vector2Subtract(vert.ClosestNeighbour.Coordinate, vert.Coordinate)
+	// 		arrowTipDirection = rl.Vector2Scale(arrowTipDirection, float32(scale))
+	// 		// arrowTipDirection,
+	// 		// rl.NewVector2(float32(scale/2), float32(scale/2)),
+	// 		// )
+	// 		// arrowTipPosition = rl.Vector2Scale(arrowTipDirection, 10)
+	// 		// arrowTipPosition = rl.Vector2Scale(vert.Coordinate, float32(scale))
+	//
+	// 		// convert to world space
+	// 		arrowOrigin := rl.Vector2Scale(vert.Coordinate, float32(scale))
+	// 		// mid shift
+	// 		arrowOrigin = rl.Vector2Add(arrowOrigin, rl.NewVector2(float32(scale)/2, float32(scale)/2))
+	//
+	// 		arrowTipPosition := rl.Vector2Add(
+	// 			arrowOrigin,
+	// 			rl.Vector2Scale(arrowTipDirection, 0.3),
+	// 		)
+	// 		// rl.Vector2Scale(arrowTipDirection, float32(scale)/3),
+	// 		// )
+	//
+	// 		rl.DrawLineEx(
+	// 			arrowOrigin,
+	// 			arrowTipPosition,
+	// 			3,
+	// 			rl.Black,
+	// 		)
+	// 		rl.DrawCircleV(
+	// 			arrowTipPosition,
+	// 			4,
+	// 			rl.Black,
+	// 		)
+	// 	}
+	// }
 	// draw grid
 	for i := range ent.Gg.Width + 1 {
 		rl.DrawLine(
@@ -179,6 +187,11 @@ func (ent *GridGraphEntity) Draw() {
 			int32(i)*ent.Gg.TileSize+int32(ent.GetPosition().Y),
 			rl.Black,
 		)
+	}
+
+	// Draw tracks of robots
+	for p, c := range ent.pixelTracks {
+		rl.DrawPixelV(p, c)
 	}
 }
 
@@ -200,10 +213,8 @@ func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
 	sclMousePos = rl.NewVector2(float32(int(sclMousePos.X)), float32(int(sclMousePos.Y)))
 
 	if event.Action == input.ActionClickDown {
-		fmt.Println("inpnut")
 		ent.Gg.RemoveUnreachableTiles(sclMousePos)
 		ent.Gg.Dijkstra(sclMousePos)
-		fmt.Println("after input")
 	}
 	if event.Action == input.ActionPlaceObstacle {
 		ent.Gg.SetObstacle(sclMousePos)
@@ -351,7 +362,6 @@ func (gg *GridGraph) Dijkstra(target rl.Vector2) {
 	targetScaled := rl.NewVector2(float32(int(target.X)), float32(int(target.Y)))
 	// Only run the algorithm if therp is a target
 	if targetVertex, ok := gg.VertexMap[targetScaled]; ok {
-		fmt.Println("target should be valid")
 		// set the target if it is valid
 		gg.CurrentTarget = targetVertex
 		// reset dijkstra color, distance, predecessor and closest neighbour

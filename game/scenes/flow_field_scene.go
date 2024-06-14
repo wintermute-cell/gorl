@@ -6,7 +6,6 @@ import (
 	"gorl/fw/core/settings"
 	"gorl/fw/modules/scenes"
 	"gorl/game/entities"
-	"math/rand"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -28,20 +27,37 @@ func (scn *FlowFieldScene) Init() {
 	camera := entities.NewCameraEntity(
 		rl.Vector2Zero(),
 		rl.Vector2Zero(),
-		rl.NewVector2(float32(settings.CurrentSettings().RenderWidth), float32(settings.CurrentSettings().RenderHeight)),
+		rl.NewVector2(
+			float32(settings.CurrentSettings().RenderWidth),
+			float32(settings.CurrentSettings().RenderHeight),
+		),
 		rl.Vector2Zero(),
 		math.Flag0,
 	)
+
 	gem.Append(scn.GetRoot(), camera)
 
 	gridGraph := entities.NewGridGraphEntity()
 	gem.Append(scn.GetRoot(), gridGraph)
 	// add some test robots
-	for i := range 10 {
-		for j := range 10 {
+	// testRobot1 := entities.NewRobotEntity()
+	// testRobot1.SetPosition(rl.NewVector2(float32(10)*40+20, float32(10)*40+20))
+	// testRobot2 := entities.NewRobotEntity()
+	// testRobot2.SetPosition(rl.NewVector2(float32(20)*40+20, float32(10)*40+20))
+	// testRobot3 := entities.NewRobotEntity()
+	// testRobot3.SetPosition(rl.NewVector2(float32(30)*40+20, float32(15)*40+20))
+	// testRobot4 := entities.NewRobotEntity()
+	// testRobot4.SetPosition(rl.NewVector2(float32(40)*40+20, float32(23)*40+20))
+	// gem.Append(gridGraph, testRobot1)
+	// gem.Append(gridGraph, testRobot2)
+	// gem.Append(gridGraph, testRobot3)
+	// gem.Append(gridGraph, testRobot4)
+	counter := 0
+	for k, _ := range gridGraph.Gg.VertexMap {
+		counter++
+		if counter%5 == 0 {
 			testRobot := entities.NewRobotEntity()
-			testRobot.SetPosition(rl.NewVector2(float32(i+10)*40, float32(j)*40))
-			testRobot.Color = rl.NewColor(uint8(200-rand.Int()%100), uint8(255-rand.Int()%150), 0, 255)
+			testRobot.SetPosition(rl.Vector2Add(rl.Vector2Scale(k, 40), rl.NewVector2(20, 20)))
 			gem.Append(gridGraph, testRobot)
 		}
 	}

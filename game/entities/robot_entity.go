@@ -15,39 +15,58 @@ var _ entities.IEntity = &RobotEntity{}
 type RobotEntity struct {
 	*entities.Entity // Required!
 
-	// Custom Fields
-	speed     float32
-	direction rl.Vector2
-	Color     rl.Color
+	Velocity     rl.Vector2
+	Acceleration rl.Vector2
+	Target       rl.Vector2
+	MaximumSpeed float32
+	MaximumForce float32
+
+	Color rl.Color
 }
 
 // NewRobotEntity creates a new instance of the RobotEntity.
 func NewRobotEntity() *RobotEntity {
-	// NOTE: you can modify the constructor to take any parameters you need to
-	// initialize the entity.
 	new_ent := &RobotEntity{
-		Entity: entities.NewEntity("RobotEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
-
-		// Initialize custom fields here
-		// ...
+		Entity:       entities.NewEntity("RobotEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
+		Velocity:     rl.Vector2Zero(),
+		Acceleration: rl.Vector2Zero(),
+		Target:       rl.Vector2Zero(),
+		MaximumSpeed: 60,
+		MaximumForce: 0.7,
+		Color:        rl.NewColor(uint8(rand.Int()%255), uint8(rand.Int()%255), uint8(rand.Int()%255), 255),
 	}
 	return new_ent
 }
 
 func (ent *RobotEntity) Init() {
-	ent.speed = float32(rand.Int()%500 + 50)
-	// TODO: remove
-	ent.direction = rl.NewVector2(4, 1)
-	ent.direction = rl.Vector2Normalize(ent.direction)
 }
 
 func (ent *RobotEntity) Deinit() {
 }
 
+func (ent *RobotEntity) Seek() {
+	// find the target
+	desiredVelocity := rl.Vector2Subtract(ent.Target, ent.GetPosition())
+	// limit the speed
+	desiredVelocity = rl.Vector2ClampValue(desiredVelocity, float32(ent.MaximumSpeed), float32(ent.MaximumSpeed))
+	// calculate the steering
+	steering := rl.Vector2Subtract(desiredVelocity, ent.Velocity)
+	// limit the steering by the MaximumForce
+	steering = rl.Vector2ClampValue(steering, 0, ent.MaximumForce)
+	ent.ApplyForce(steering)
+}
+
+func (ent *RobotEntity) ApplyForce(force rl.Vector2) {
+	ent.Acceleration = rl.Vector2Add(ent.Acceleration, force)
+}
+
 func (ent *RobotEntity) Update() {
 	// MOVEMENT
-	distanceTraveled := rl.Vector2Scale(rl.Vector2Scale(ent.direction, ent.speed), rl.GetFrameTime())
-	ent.SetPosition(rl.Vector2Add(ent.GetPosition(), distanceTraveled))
+	ent.Seek()
+	ent.Velocity = rl.Vector2Add(ent.Velocity, ent.Acceleration)
+	ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.Velocity, rl.GetFrameTime())))
+	ent.Acceleration = rl.Vector2Zero()
+
 }
 
 func (ent *RobotEntity) Draw() {
@@ -66,11 +85,4 @@ func (ent *RobotEntity) GetTilePosition() rl.Vector2 {
 		float32(int(tilePosition.Y)),
 	)
 	return tilePosition
-}
-
-// TODO: Add a vector2 to the vectorpool (?) and calculate the resulting direction.
-// For now this is just like SetDirection(rl.Vector2) would be
-func (ent *RobotEntity) AddDirectionVector(dir rl.Vector2) {
-	// TODO: steering behaviour
-	ent.direction = rl.Vector2Normalize(dir)
 }
