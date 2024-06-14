@@ -64,6 +64,7 @@ func (ent *RobotEntity) Update() {
 	// MOVEMENT
 	ent.Seek()
 	ent.Velocity = rl.Vector2Add(ent.Velocity, ent.Acceleration)
+	ent.Velocity = rl.Vector2ClampValue(ent.Velocity, 0, ent.MaximumSpeed)
 	ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.Velocity, rl.GetFrameTime())))
 	ent.Acceleration = rl.Vector2Zero()
 
