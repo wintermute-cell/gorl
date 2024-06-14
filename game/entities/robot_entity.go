@@ -46,14 +46,14 @@ func (ent *RobotEntity) Deinit() {
 
 func (ent *RobotEntity) Seek() {
 	// find the target
-	desiredVelocity := rl.Vector2Subtract(ent.Target, ent.GetPosition())
+	force := rl.Vector2Subtract(ent.Target, ent.GetPosition())
 	// limit the speed
-	desiredVelocity = rl.Vector2ClampValue(desiredVelocity, float32(ent.MaximumSpeed), float32(ent.MaximumSpeed))
+	force = rl.Vector2ClampValue(force, float32(ent.MaximumSpeed), float32(ent.MaximumSpeed))
 	// calculate the steering
-	steering := rl.Vector2Subtract(desiredVelocity, ent.Velocity)
+	force = rl.Vector2Subtract(force, ent.Velocity)
 	// limit the steering by the MaximumForce
-	steering = rl.Vector2ClampValue(steering, 0, ent.MaximumForce)
-	ent.ApplyForce(steering)
+	force = rl.Vector2ClampValue(force, 0, ent.MaximumForce)
+	ent.ApplyForce(force)
 }
 
 func (ent *RobotEntity) ApplyForce(force rl.Vector2) {
