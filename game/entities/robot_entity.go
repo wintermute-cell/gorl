@@ -44,7 +44,7 @@ func (ent *RobotEntity) Init() {
 func (ent *RobotEntity) Deinit() {
 }
 
-func (ent *RobotEntity) Seek() {
+func (ent *RobotEntity) Seek() rl.Vector2 {
 	// find the target
 	force := rl.Vector2Subtract(ent.Target, ent.GetPosition())
 	// limit the speed
@@ -53,7 +53,7 @@ func (ent *RobotEntity) Seek() {
 	force = rl.Vector2Subtract(force, ent.Velocity)
 	// limit the steering by the MaximumForce
 	force = rl.Vector2ClampValue(force, 0, ent.MaximumForce)
-	ent.ApplyForce(force)
+	return force
 }
 
 func (ent *RobotEntity) ApplyForce(force rl.Vector2) {
@@ -62,7 +62,7 @@ func (ent *RobotEntity) ApplyForce(force rl.Vector2) {
 
 func (ent *RobotEntity) Update() {
 	// MOVEMENT
-	ent.Seek()
+	ent.ApplyForce(ent.Seek())
 	ent.Velocity = rl.Vector2Add(ent.Velocity, ent.Acceleration)
 	ent.Velocity = rl.Vector2ClampValue(ent.Velocity, 0, ent.MaximumSpeed)
 	ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.Velocity, rl.GetFrameTime())))
