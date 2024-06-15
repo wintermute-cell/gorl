@@ -16,18 +16,17 @@ var _ entities.IEntity = &RobotEntity{}
 type RobotEntity struct {
 	*entities.Entity // Required!
 
-	Velocity         rl.Vector2
-	Acceleration     rl.Vector2
-	CurrentTarget    rl.Vector2 // the next tile
-	FinalTarget      rl.Vector2 // the target tile
-	MaximumSpeed     float32
-	MaximumForce     float32
-	SlowDownDistance float32
-	SeeAheadDistance float32
-	SeeAheadV        rl.Vector2
-	// SeeAhead2V        rl.Vector2
-	ClosestWallVector rl.Vector2
-	AvoidanceForce    float32
+	Velocity               rl.Vector2
+	Acceleration           rl.Vector2
+	CurrentTarget          rl.Vector2 // the next tile
+	FinalTarget            rl.Vector2 // the target tile
+	MaximumSpeed           float32
+	MaximumForce           float32
+	SlowDownDistance       float32
+	ObstacleDetectionRange float32
+	VectorToObstacle       rl.Vector2
+	AvoidanceVelocity      rl.Vector2
+	AvoidanceForce         float32
 
 	Color rl.Color
 }
@@ -35,20 +34,19 @@ type RobotEntity struct {
 // NewRobotEntity creates a new instance of the RobotEntity.
 func NewRobotEntity() *RobotEntity {
 	new_ent := &RobotEntity{
-		Entity:           entities.NewEntity("RobotEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
-		Velocity:         rl.Vector2Zero(),
-		Acceleration:     rl.Vector2Zero(),
-		CurrentTarget:    rl.Vector2Zero(),
-		FinalTarget:      rl.Vector2Zero(),
-		MaximumSpeed:     150,
-		MaximumForce:     0.7,
-		SlowDownDistance: 300,
-		SeeAheadDistance: 100,
-		SeeAheadV:        rl.Vector2Zero(),
-		// SeeAhead2V:        rl.Vector2Zero(),
-		ClosestWallVector: rl.Vector2Zero(),
-		AvoidanceForce:    1,
-		Color:             rl.NewColor(uint8(rand.Int()%255), uint8(rand.Int()%255), uint8(rand.Int()%255), 255),
+		Entity:                 entities.NewEntity("RobotEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
+		Velocity:               rl.Vector2Zero(),
+		Acceleration:           rl.Vector2Zero(),
+		CurrentTarget:          rl.Vector2Zero(),
+		FinalTarget:            rl.Vector2Zero(),
+		MaximumSpeed:           150,
+		MaximumForce:           0.8,
+		SlowDownDistance:       300,
+		ObstacleDetectionRange: 150,
+		VectorToObstacle:       rl.Vector2Zero(),
+		AvoidanceVelocity:      rl.Vector2Zero(),
+		AvoidanceForce:         0.5,
+		Color:                  rl.NewColor(uint8(rand.Int()%255), uint8(rand.Int()%255), uint8(rand.Int()%255), 255),
 	}
 	return new_ent
 }
@@ -62,18 +60,34 @@ func (ent *RobotEntity) Deinit() {
 func (ent *RobotEntity) FindClosestWall(obstacles []rl.Vector2) rl.Vector2 {
 	// TODO:
 	closestObstacle := rl.Vector2Zero()
-	closestObstacleLength := math.MaxFloat32
+	closestObstacleLength := math.MaxFloat64
 
 	for _, obstacle := range obstacles {
 		vecToObstacle := rl.Vector2Subtract(obstacle, ent.GetPosition())
-		currentLength := rl.Vector2Length(vecToObstacle)
-		if currentLength < float32(closestObstacleLength) {
+		currentLength := float64(rl.Vector2Length(vecToObstacle))
+		// if float32(closestObstacleLength) < 150 && currentLength < float32(closestObstacleLength) {
+		if currentLength < closestObstacleLength {
 			closestObstacle = vecToObstacle
 			closestObstacleLength = float64(currentLength)
 		}
 	}
 
-	return closestObstacle
+	// for some reason this works, but not if the check is above in the if clause of the loop
+	if closestObstacleLength > float64(ent.ObstacleDetectionRange) {
+		closestObstacle = rl.Vector2Zero()
+	}
+
+	// for debug purposes
+	ent.VectorToObstacle = closestObstacle
+
+	// NOTE: somehow this all just magically works yeey \./
+
+	// limit the steering by the AvoidanceForce
+	closestObstacle = rl.Vector2ClampValue(closestObstacle, 0, float32(ent.AvoidanceForce))
+
+	// this should be the force pushing the robot away from the obstacle
+	// so we have to multiply it with -1
+	return rl.Vector2Scale(closestObstacle, -1)
 }
 
 // like seek, but slows down the closer the target is
@@ -104,12 +118,10 @@ func (ent *RobotEntity) ApplyForce(force rl.Vector2) {
 }
 
 func (ent *RobotEntity) Update() {
-	ent.SeeAheadV = rl.Vector2Scale(rl.Vector2Normalize(ent.Velocity), ent.SeeAheadDistance)
-	// ent.SeeAhead2V = rl.Vector2Scale(rl.Vector2Normalize(ent.Velocity), ent.SeeAheadDistance/2)
 
 	// MOVEMENT
 	ent.ApplyForce(ent.Arrive())
-	// ent.ApplyForce(ent.AvoidanceVelocity)
+	ent.ApplyForce(ent.AvoidanceVelocity)
 
 	ent.Velocity = rl.Vector2Add(ent.Velocity, ent.Acceleration)
 	ent.Velocity = rl.Vector2ClampValue(ent.Velocity, 0, ent.MaximumSpeed)
@@ -120,15 +132,14 @@ func (ent *RobotEntity) Update() {
 
 func (ent *RobotEntity) Draw() {
 	rl.DrawCircleV(ent.GetPosition(), 10, ent.Color)
-	// draw the see ahead
-	rl.DrawCircleV(rl.Vector2Add(ent.GetPosition(), ent.SeeAheadV), 5, rl.Green)
 	// draw the velocity to see where the robot is going
 	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.Velocity), rl.Black)
-	// // draw the see ahead2
-	// rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.SeeAhead2V), rl.Red)
 	// draw avoidance velocity
 	// rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.AvoidanceVelocity), rl.Red)
-	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.ClosestWallVector), rl.Red)
+	// draw vector to closest obstacle
+	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.VectorToObstacle), rl.Red)
+	// draw AvoidanceVelocity
+	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.AvoidanceVelocity), rl.Red)
 }
 
 func (ent *RobotEntity) OnInputEvent(event *input.InputEvent) bool {

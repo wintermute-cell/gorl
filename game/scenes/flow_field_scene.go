@@ -56,7 +56,7 @@ func (scn *FlowFieldScene) Init() {
 	robot := entities.NewRobotEntity()
 	robot.SetPosition(rl.NewVector2(10*40+20, 10*40+20))
 	gem.Append(gridGraph, robot)
-
+	//
 	// counter := 0
 	// for k := range gridGraph.Gg.VertexMap {
 	// 	counter++
