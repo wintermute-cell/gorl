@@ -45,6 +45,7 @@ func (ent *GridGraphEntity) Deinit() {
 }
 
 func (ent *GridGraphEntity) Update() {
+	// ROBOT MOVEMENT
 	for _, robot := range gem.GetChildren(ent) {
 		robotEntity, ok := robot.(*RobotEntity)
 		if !ok {
@@ -57,6 +58,10 @@ func (ent *GridGraphEntity) Update() {
 			robotEntity.FinalTarget = rl.Vector2Add(robotEntity.FinalTarget, rl.NewVector2(20, 20))
 		}
 
+		robotEntity.ClosestWallVector = robotEntity.FindClosestWall(ent.Gg.ObstaclesVRenderSpace)
+
+		//==========================================
+		// flow field movement
 		flowVector := ent.Gg.GetFlowVector(robotEntity.GetPosition())
 		// if the flowVector is a Vector2Zero, we are either at the target, or drove into a wall,
 		// so we want to stop the vehicle immediately
@@ -196,7 +201,12 @@ func (ent *GridGraphEntity) Draw() {
 
 	// Draw tracks of robots
 	for p, c := range ent.pixelTracks {
-		rl.DrawPixelV(p, c)
+		rl.DrawPixelV(rl.Vector2Add(ent.GetPosition(), p), c)
+	}
+
+	// DEBUG draw obstacles
+	for _, obst := range ent.Gg.ObstaclesVRenderSpace {
+		rl.DrawCircleV(rl.Vector2Add(obst, ent.GetPosition()), 3, rl.White)
 	}
 }
 
@@ -237,13 +247,14 @@ const (
 type GridGraph struct {
 	// Vertices  []*Vertex NOTE: because I only need a grid graph that has coordinates, the vertices[] are not needed,
 	// NOTE: they are included in the VertexMap
-	Width      int
-	Height     int
-	VertexMap  map[rl.Vector2]*Vertex
-	TileSize   int32
-	DrawOffset rl.Vector2
-	TextSize   int
-	Target     *Vertex
+	Width                 int
+	Height                int
+	VertexMap             map[rl.Vector2]*Vertex
+	ObstaclesVRenderSpace []rl.Vector2
+	TileSize              int32
+	DrawOffset            rl.Vector2
+	TextSize              int
+	Target                *Vertex
 }
 
 // A Vertex is a node that belongs to a graph and can have an arbitrary number
@@ -265,6 +276,7 @@ func NewGridGraph(width int, height int) *GridGraph {
 	gridGraph.Width = width
 	gridGraph.Height = height
 	gridGraph.VertexMap = make(map[rl.Vector2]*Vertex)
+	// gridGraph.Obstacles = make([]rl.Vector2, 50)
 	gridGraph.DrawOffset = rl.Vector2Zero()
 	gridGraph.TileSize = 40
 	gridGraph.TextSize = 20
@@ -477,15 +489,29 @@ func (gg *GridGraph) RemoveUnreachableTiles(position rl.Vector2) {
 			nodesToCheck = slices.Delete(nodesToCheck, index, index+1)
 		}
 	}
+	// replace the old vertex map with the new one, remove it from the old one
+	// so that we can call SetObstacle on them, to add them properly to
+	// ObstaclesVRenderSpace
 	newVertexMap := make(map[rl.Vector2]*Vertex)
 	for _, vert := range reachableNodes {
 		newVertexMap[vert.Coordinate] = vert
+		delete(gg.VertexMap, vert.Coordinate)
+	}
+	// call set obstacles on the unreachable tiles
+	for k, _ := range gg.VertexMap {
+		gg.SetObstacle(k)
 	}
 	gg.VertexMap = newVertexMap
 }
 
 // Sets an "obstacle" in the graph. Basically removes a vertex from the grid graph
 func (gg *GridGraph) SetObstacle(position rl.Vector2) {
+	// add the obstacle to its slice if it is not already in there
+	obstVRenderSpace := rl.Vector2Add(rl.Vector2Scale(position, 40), rl.NewVector2(20, 20))
+	i := slices.Index(gg.ObstaclesVRenderSpace, obstVRenderSpace)
+	if i == -1 {
+		gg.ObstaclesVRenderSpace = append(gg.ObstaclesVRenderSpace, obstVRenderSpace)
+	}
 	// check if position is (still) in the grid graph
 	if obstacleVert, ok := gg.VertexMap[position]; ok {
 		// remove the vert from its neighbours
