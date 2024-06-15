@@ -40,12 +40,12 @@ func NewRobotEntity() *RobotEntity {
 		CurrentTarget:          rl.Vector2Zero(),
 		FinalTarget:            rl.Vector2Zero(),
 		MaximumSpeed:           150,
-		MaximumForce:           0.8,
+		MaximumForce:           0.7,
 		SlowDownDistance:       300,
 		ObstacleDetectionRange: 150,
 		VectorToObstacle:       rl.Vector2Zero(),
 		AvoidanceVelocity:      rl.Vector2Zero(),
-		AvoidanceForce:         0.5,
+		AvoidanceForce:         0.65,
 		Color:                  rl.NewColor(uint8(rand.Int()%255), uint8(rand.Int()%255), uint8(rand.Int()%255), 255),
 	}
 	return new_ent
@@ -80,7 +80,7 @@ func (ent *RobotEntity) FindClosestWall(obstacles []rl.Vector2) rl.Vector2 {
 	// for debug purposes
 	ent.VectorToObstacle = closestObstacle
 
-	// NOTE: somehow this all just magically works yeey \./
+	// NOTE: somehow this all just magically works yeey ?? \./
 
 	// limit the steering by the AvoidanceForce
 	closestObstacle = rl.Vector2ClampValue(closestObstacle, 0, float32(ent.AvoidanceForce))
