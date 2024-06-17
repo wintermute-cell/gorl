@@ -64,6 +64,7 @@ func NewVfhActorEntity(position rl.Vector2, rayAmount int32, visionAngle, vision
 		collider:      physics.NewCircleCollider(position, 6, physics.BodyTypeDynamic),
 	}
 
+	new_ent.collider.SetCategory(physics.CollisionCategoryPlayer)
 	new_ent.collider.SetCallbacks(
 		map[physics.CollisionCategory]physics.CollisionCallback{
 			physics.CollisionCategoryEnvironment: func() {
@@ -157,7 +158,11 @@ func (ent *VfhActorEntity) Update() {
 
 	// Steering logic
 	if ent.simpleCostFunc {
-		ent.optimalDir = ent.VFHGoalOrientedCostFunction(ent.vfHistogram)
+		if ent.isGoalDirected {
+			ent.optimalDir = ent.VFHGoalOrientedCostFunction(ent.vfHistogram)
+		} else {
+			ent.optimalDir = ent.VFHCostFunction(ent.vfHistogram)
+		}
 		angleToOptimal := rl.Vector2Angle(ent.forward, ent.optimalDir)
 		ent.SetRotation(ent.GetRotation() + angleToOptimal*rl.Rad2deg)
 	} else {
@@ -256,6 +261,9 @@ func (ent *VfhActorEntity) OnInputEvent(event *input.InputEvent) bool {
 			ent.simpleCostFunc = true
 		} else if !ent.isGoalDirected {
 			ent.isGoalDirected = true
+		} else {
+			ent.simpleCostFunc = false
+			ent.isGoalDirected = false
 		}
 	}
 
