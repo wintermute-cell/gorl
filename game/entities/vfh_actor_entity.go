@@ -29,7 +29,6 @@ type VfhActorEntity struct {
 	vfHistogram   []rl.Vector2
 	adjustedVFH   []rl.Vector2
 	visionRange   float32
-	goal          rl.Vector2
 	mainCamera    *CameraEntity
 	collider      *physics.Collider
 	isCrashed     bool
@@ -39,16 +38,21 @@ type VfhActorEntity struct {
 	rayColor      color.RGBA
 	adjustedColor color.RGBA
 
-	constructedMapData []color.RGBA
-	constructedMap     rl.Texture2D
+	baseStation   *BaseStationEntity
+	goalPath      []rl.Vector2
+	goalDirection rl.Vector2
 
 	// Animation flags
-	simpleCostFunc bool
-	isGoalDirected bool
+	hasPathfinding bool
 }
 
 // NewVfhActorEntity creates a new instance of the VfhActorEntity.
-func NewVfhActorEntity(position rl.Vector2, rayAmount int32, visionAngle, visionRange float32) *VfhActorEntity {
+func NewVfhActorEntity(
+	baseStation *BaseStationEntity,
+	position rl.Vector2,
+	rayAmount int32,
+	visionAngle, visionRange float32,
+) *VfhActorEntity {
 	if rayAmount%2 == 0 {
 		logging.Warning("Ray amount should be an odd number, so there is ray pointing straight forward! Adding 1 to the ray amount.")
 		rayAmount = rayAmount + 1
@@ -56,6 +60,7 @@ func NewVfhActorEntity(position rl.Vector2, rayAmount int32, visionAngle, vision
 	new_ent := &VfhActorEntity{
 		sprite:        rl.LoadTexture("robot_small.png"),
 		Entity:        entities.NewEntity("VfhActorEntity", position, 0, rl.Vector2One()),
+		baseStation:   baseStation,
 		forward:       rl.NewVector2(1, 0),
 		visionRange:   visionRange,
 		selfColor:     colorscheme.Colorscheme.Color01.ToRGBA(),
@@ -75,12 +80,6 @@ func NewVfhActorEntity(position rl.Vector2, rayAmount int32, visionAngle, vision
 		},
 	)
 
-	// fill the image with transparent black pixels
-	imgData := make([]byte, 1920*1080*4)
-	emptyImg := rl.NewImage(imgData, 1920, 1080, 1, rl.UncompressedR8g8b8a8)
-	new_ent.constructedMap = rl.LoadTextureFromImage(emptyImg)
-	new_ent.constructedMapData = make([]color.RGBA, 1920*1080)
-
 	anglePerRay := visionAngle / float32(rayAmount-1)
 	new_ent.rayDirections = make([]rl.Vector2, rayAmount)
 	for i := int32(0); i < rayAmount; i++ {
@@ -92,11 +91,6 @@ func NewVfhActorEntity(position rl.Vector2, rayAmount int32, visionAngle, vision
 	new_ent.adjustedVFH = make([]rl.Vector2, rayAmount, rayAmount)
 
 	return new_ent
-}
-
-// SetGoal sets the goal for the actor to move towards.
-func (ent *VfhActorEntity) SetGoal(goal rl.Vector2) {
-	ent.goal = goal
 }
 
 func (ent *VfhActorEntity) Init() {
@@ -145,29 +139,23 @@ func (ent *VfhActorEntity) Update() {
 			hitPos := hits[0].IntersectionPoint
 			hitPos.X = util.Clamp(hitPos.X, 0, 1919)
 			hitPos.Y = util.Clamp(hitPos.Y, 0, 1079)
-			idx := int(hitPos.Y)*1920 + int(hitPos.X)
-			ent.constructedMapData[idx] = colorscheme.Colorscheme.Color04.ToRGBA()
+			ent.baseStation.DiscoverPixel(int(hitPos.X), int(hitPos.Y))
 		} else {
 			ent.rayHits[idx] = physics.RaycastHit{}
 			ent.vfHistogram[idx] = rl.Vector2Scale(rayDir, ent.visionRange)
 		}
 	}
 
-	// Make the texture match the map data
-	rl.UpdateTexture(ent.constructedMap, ent.constructedMapData)
-
 	// Steering logic
-	if ent.simpleCostFunc {
-		if ent.isGoalDirected {
-			ent.optimalDir = ent.VFHGoalOrientedCostFunction(ent.vfHistogram)
-		} else {
-			ent.optimalDir = ent.VFHCostFunction(ent.vfHistogram)
-		}
-		angleToOptimal := rl.Vector2Angle(ent.forward, ent.optimalDir)
-		ent.SetRotation(ent.GetRotation() + angleToOptimal*rl.Rad2deg)
-	} else {
-		ent.SetRotation(ent.GetRotation() + 10*rl.GetFrameTime())
+	ent.goalDirection = rl.Vector2Zero()
+	ent.goalPath = ent.baseStation.GetPath(ent.GetPosition(), ent.baseStation.GetPosition())
+	if len(ent.goalPath) >= 3 {
+		ent.goalDirection = rl.Vector2Subtract(ent.goalPath[1], ent.GetPosition())
+		//rl.Vector2Normalize(rl.Vector2Subtract(ent.goalPath[2], ent.goalPath[0]))
 	}
+	ent.optimalDir = ent.VFHGoalOrientedCostFunction(ent.vfHistogram, ent.goalDirection)
+	angleToOptimal := rl.Vector2Angle(ent.forward, ent.optimalDir)
+	ent.SetRotation(ent.GetRotation() + angleToOptimal*rl.Rad2deg*0.8)
 
 	// Move forward every frame
 	moveSpeed := float32(90)
@@ -179,9 +167,6 @@ func (ent *VfhActorEntity) Update() {
 }
 
 func (ent *VfhActorEntity) Draw() {
-
-	// Draw the constructed map
-	rl.DrawTexture(ent.constructedMap, 0, 0, rl.White)
 
 	// Draw the rays
 	for _, rayDir := range ent.vfHistogram {
@@ -209,22 +194,25 @@ func (ent *VfhActorEntity) Draw() {
 	)
 
 	// Draw the direction towards the goal
-	if ent.isGoalDirected {
-		goalDirection := rl.Vector2Normalize(
-			rl.Vector2Subtract(ent.goal, ent.GetPosition()),
-		)
-		rl.DrawLineV(
-			ent.GetPosition(),
-			rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(goalDirection, 50)),
-			rl.Green,
-		)
-	}
+	rl.DrawLineV(
+		ent.GetPosition(),
+		rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.goalDirection, 50)),
+		rl.Green,
+	)
 
 	// Draw the intersection points
 	for _, hit := range ent.rayHits {
 		if hit != (physics.RaycastHit{}) {
 			rl.DrawCircleV(hit.IntersectionPoint, 2, ent.rayColor)
 		}
+	}
+
+	// Draw the current path to the goal
+	for idx, pos := range ent.goalPath {
+		if idx == 0 {
+			continue
+		}
+		rl.DrawLineV(ent.goalPath[idx-1], pos, rl.Green)
 	}
 
 	// Drawing the actor itself
@@ -242,8 +230,6 @@ func (ent *VfhActorEntity) Draw() {
 	//	0, //ent.GetRotation(),
 	//	rl.White,
 	//)
-
-	// Draw constructed map
 }
 
 func (ent *VfhActorEntity) OnInputEvent(event *input.InputEvent) bool {
@@ -259,63 +245,20 @@ func (ent *VfhActorEntity) OnInputEvent(event *input.InputEvent) bool {
 	}
 
 	if event.Action == input.ActionNextAnimation {
-		if !ent.simpleCostFunc {
-			ent.simpleCostFunc = true
-		} else if !ent.isGoalDirected {
-			ent.isGoalDirected = true
-		} else {
-			ent.simpleCostFunc = false
-			ent.isGoalDirected = false
+		if !ent.hasPathfinding {
+			ent.hasPathfinding = true
 		}
 	}
 
 	return true
 }
 
-// VFHCostFunction selects the most optimal direction to move towards, given a
-// polar histogram of the environment.
-func (ent *VfhActorEntity) VFHCostFunction(vfh []rl.Vector2) rl.Vector2 {
-
-	// Iterate through the histogram, starting from the middle, since the
-	// middle is the direction we're currently facing.
-
-	vfh = ent.EnlargementFunction(vfh, 10)
-	ent.adjustedVFH = vfh
-
-	mid := len(vfh) / 2
-	selection := vfh[mid]
-	for i := mid; i >= 0; i-- {
-		leftIdx := mid - i
-		rightIdx := mid + i
-
-		// Check the left side
-		left := vfh[leftIdx]
-		leftLen := rl.Vector2Length(left)
-		if leftLen >= rl.Vector2Length(selection)-0.0001 { // NOTE: we have to compensate for floating point errors
-			selection = left
-		}
-
-		// Check the right side
-		right := vfh[rightIdx]
-		rightLen := rl.Vector2Length(right)
-		if rightLen >= rl.Vector2Length(selection)-0.0001 {
-			selection = right
-		}
-	}
-
-	return selection
-}
-
 // VFHGoalOrientedCostFunction selects the most optimal direction to move towards, given a
 // polar histogram of the environment. It uses direction centrality and alignment with the goal direction as weights.
-func (ent *VfhActorEntity) VFHGoalOrientedCostFunction(vfh []rl.Vector2) rl.Vector2 {
+func (ent *VfhActorEntity) VFHGoalOrientedCostFunction(vfh []rl.Vector2, goalDirection rl.Vector2) rl.Vector2 {
 
 	vfh = ent.EnlargementFunction(vfh, 10)
 	ent.adjustedVFH = vfh
-
-	goalDirection := rl.Vector2Normalize(
-		rl.Vector2Subtract(ent.goal, ent.GetPosition()),
-	)
 
 	mid := len(vfh) / 2
 	selection := vfh[mid]
@@ -380,9 +323,9 @@ func (ent *VfhActorEntity) EnlargementFunction(vfh []rl.Vector2, robotRadius int
 	// 2. Calculate an angular range `gamma` around each obstacle point
 	// Calculated as in the paper: http://www.cs.cmu.edu/~iwan/papers/vfh+.pdf (page 2)
 	gammas := make([]float32, 0)
-	clearance := 10.0 // This is the minimum clearance between the robot and the obstacle, d_s in the paper
+	clearance := float64(robotRadius) * 1.4 // This is the minimum clearance between the robot and the obstacle, d_s in the paper
 	for idx := range obstaclePoints {
-		gammaRad := math.Asin((float64(robotRadius) + clearance) / float64(rl.Vector2Length(vfh[idx])))
+		gammaRad := math.Asin(float64(float64(robotRadius)+clearance) / float64(rl.Vector2Length(vfh[idx])))
 		gammas = append(gammas, float32(gammaRad))
 	}
 

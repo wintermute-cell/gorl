@@ -85,16 +85,18 @@ func (ent *EnvironmentEntity) Update() {
 
 func (ent *EnvironmentEntity) Draw() {
 	//rl.DrawTexture(ent.groundTexture, 0, 0, rl.White)
-	for _, col := range ent.cols {
-		verts := col.GetVertices()
-		for idx, v := range verts {
-			if idx == 0 {
-				rl.DrawLineEx(v, verts[len(verts)-1], 2, rl.Green)
-			} else {
-				rl.DrawLineEx(v, verts[idx-1], 2, rl.Green)
-			}
-		}
-	}
+
+	// Drawing the colliders
+	//for _, col := range ent.cols {
+	//	verts := col.GetVertices()
+	//	for idx, v := range verts {
+	//		if idx == 0 {
+	//			rl.DrawLineEx(v, verts[len(verts)-1], 2, rl.Green)
+	//		} else {
+	//			rl.DrawLineEx(v, verts[idx-1], 2, rl.Green)
+	//		}
+	//	}
+	//}
 }
 
 func (ent *EnvironmentEntity) OnInputEvent(event *input.InputEvent) bool {
