@@ -74,7 +74,8 @@ func (ent *GridGraphEntity) Update() {
 		}
 
 		robotEntity.WallAvoidanceVelocity = robotEntity.AvoidWall(ent.Gg.ObstaclesVRenderSpace)
-		robotEntity.RobotAvoidanceVelocity = robotEntity.AvoidRobot(ent.Robots)
+		robotEntity.RobotAvoidanceVelocity = robotEntity.CalculateSeparationForce(ent.Robots)
+		// robotEntity.RobotAvoidanceVelocity = robotEntity.AvoidRobot(ent.Robots)
 
 		//==========================================
 		// flow field movement
@@ -158,43 +159,43 @@ func (ent *GridGraphEntity) Draw() {
 
 	}
 	// draw the arrows
-	// for _, vert := range ent.Gg.VertexMap {
-	// 	if vert.ClosestNeighbour != nil {
-	// 		// NOTE: HARDCODED!
-	// 		scale := 40
-	// 		arrowTipDirection := rl.Vector2Subtract(vert.ClosestNeighbour.Coordinate, vert.Coordinate)
-	// 		arrowTipDirection = rl.Vector2Scale(arrowTipDirection, float32(scale))
-	// 		// arrowTipDirection,
-	// 		// rl.NewVector2(float32(scale/2), float32(scale/2)),
-	// 		// )
-	// 		// arrowTipPosition = rl.Vector2Scale(arrowTipDirection, 10)
-	// 		// arrowTipPosition = rl.Vector2Scale(vert.Coordinate, float32(scale))
-	//
-	// 		// convert to world space
-	// 		arrowOrigin := rl.Vector2Scale(vert.Coordinate, float32(scale))
-	// 		// mid shift
-	// 		arrowOrigin = rl.Vector2Add(arrowOrigin, rl.NewVector2(float32(scale)/2, float32(scale)/2))
-	//
-	// 		arrowTipPosition := rl.Vector2Add(
-	// 			arrowOrigin,
-	// 			rl.Vector2Scale(arrowTipDirection, 0.3),
-	// 		)
-	// 		// rl.Vector2Scale(arrowTipDirection, float32(scale)/3),
-	// 		// )
-	//
-	// 		rl.DrawLineEx(
-	// 			arrowOrigin,
-	// 			arrowTipPosition,
-	// 			3,
-	// 			rl.Black,
-	// 		)
-	// 		rl.DrawCircleV(
-	// 			arrowTipPosition,
-	// 			4,
-	// 			rl.Black,
-	// 		)
-	// 	}
-	// }
+	for _, vert := range ent.Gg.VertexMap {
+		if vert.ClosestNeighbour != nil {
+			// NOTE: HARDCODED!
+			scale := 40
+			arrowTipDirection := rl.Vector2Subtract(vert.ClosestNeighbour.Coordinate, vert.Coordinate)
+			arrowTipDirection = rl.Vector2Scale(arrowTipDirection, float32(scale))
+			// arrowTipDirection,
+			// rl.NewVector2(float32(scale/2), float32(scale/2)),
+			// )
+			// arrowTipPosition = rl.Vector2Scale(arrowTipDirection, 10)
+			// arrowTipPosition = rl.Vector2Scale(vert.Coordinate, float32(scale))
+
+			// convert to world space
+			arrowOrigin := rl.Vector2Scale(vert.Coordinate, float32(scale))
+			// mid shift
+			arrowOrigin = rl.Vector2Add(arrowOrigin, rl.NewVector2(float32(scale)/2, float32(scale)/2))
+
+			arrowTipPosition := rl.Vector2Add(
+				arrowOrigin,
+				rl.Vector2Scale(arrowTipDirection, 0.3),
+			)
+			// rl.Vector2Scale(arrowTipDirection, float32(scale)/3),
+			// )
+
+			rl.DrawLineEx(
+				rl.Vector2Add(ent.GetPosition(), arrowOrigin),
+				rl.Vector2Add(ent.GetPosition(), arrowTipPosition),
+				3,
+				rl.NewColor(0, 0, 0, 150),
+			)
+			rl.DrawCircleV(
+				rl.Vector2Add(ent.GetPosition(), arrowTipPosition),
+				4,
+				rl.NewColor(0, 0, 0, 150),
+			)
+		}
+	}
 	// draw grid
 	for i := range ent.Gg.Width + 1 {
 		rl.DrawLine(
@@ -221,9 +222,9 @@ func (ent *GridGraphEntity) Draw() {
 	}
 
 	// DEBUG draw obstacles
-	for _, obst := range ent.Gg.ObstaclesVRenderSpace {
-		rl.DrawCircleV(rl.Vector2Add(obst, ent.GetPosition()), 3, rl.White)
-	}
+	// for _, obst := range ent.Gg.ObstaclesVRenderSpace {
+	// 	rl.DrawCircleV(rl.Vector2Add(obst, ent.GetPosition()), 3, rl.White)
+	// }
 }
 
 func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
