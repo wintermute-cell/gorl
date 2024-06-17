@@ -75,6 +75,7 @@ func (ent *RobotEntity) FindClosestWall(obstacles []rl.Vector2) rl.Vector2 {
 	// for some reason this works, but not if the check is above in the if clause of the loop
 	if closestObstacleLength > float64(ent.ObstacleDetectionRange) {
 		closestObstacle = rl.Vector2Zero()
+		ent.WallAvoidanceVelocity = rl.Vector2Zero()
 	}
 
 	// for debug purposes
@@ -82,6 +83,7 @@ func (ent *RobotEntity) FindClosestWall(obstacles []rl.Vector2) rl.Vector2 {
 
 	// NOTE: somehow this all just magically works yeey ?? \./
 
+	// NOTE: why though?
 	closestObstacle = rl.Vector2Subtract(closestObstacle, ent.WallAvoidanceVelocity)
 	// limit the steering by the AvoidanceForce
 	closestObstacle = rl.Vector2ClampValue(closestObstacle, 0, float32(ent.WallAvoidanceForce))
@@ -140,7 +142,7 @@ func (ent *RobotEntity) Draw() {
 	// draw vector to closest obstacle
 	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.VectorToObstacle), rl.Red)
 	// draw AvoidanceVelocity
-	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.WallAvoidanceVelocity), rl.Red)
+	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.WallAvoidanceVelocity, 50)), rl.Red)
 }
 
 func (ent *RobotEntity) OnInputEvent(event *input.InputEvent) bool {
