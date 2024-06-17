@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"fmt"
 	"gorl/fw/core/entities"
 	"gorl/fw/core/gem"
 	input "gorl/fw/core/input/input_event"
@@ -19,6 +20,7 @@ type GridGraphEntity struct {
 	*entities.Entity // Required!j
 	Gg               *GridGraph
 	pixelTracks      map[rl.Vector2]rl.Color
+	Robots           []*RobotEntity
 }
 
 // NewGridGraphEntity creates a new instance of the GridGraphEntity.
@@ -39,6 +41,19 @@ func (ent *GridGraphEntity) Init() {
 	ent.Gg.CalculateGridGraphFromImage(mapImage, 40)
 	// ent.gg.RemoveUnreachableTiles(rl.NewVector2(10, 0))
 	// ent.gg.Dijkstra(rl.NewVector2(10, 0))
+
+}
+
+// needed because init() gets called before the gem appends the stuff to it
+func (ent *GridGraphEntity) InitRobots() {
+	// add all the robots to the list
+	for _, robot := range gem.GetChildren(ent) {
+		robotEntity, ok := robot.(*RobotEntity)
+		if ok {
+			ent.Robots = append(ent.Robots, robotEntity)
+			fmt.Println("appending")
+		}
+	}
 }
 
 func (ent *GridGraphEntity) Deinit() {
@@ -58,7 +73,8 @@ func (ent *GridGraphEntity) Update() {
 			robotEntity.FinalTarget = rl.Vector2Add(robotEntity.FinalTarget, rl.NewVector2(20, 20))
 		}
 
-		robotEntity.AvoidanceVelocity = robotEntity.FindClosestWall(ent.Gg.ObstaclesVRenderSpace)
+		robotEntity.WallAvoidanceVelocity = robotEntity.AvoidWall(ent.Gg.ObstaclesVRenderSpace)
+		robotEntity.RobotAvoidanceVelocity = robotEntity.AvoidRobot(ent.Robots)
 
 		//==========================================
 		// flow field movement

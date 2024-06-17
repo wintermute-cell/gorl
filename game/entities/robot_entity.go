@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"fmt"
 	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_event"
 	"math"
@@ -24,9 +25,12 @@ type RobotEntity struct {
 	MaximumForce           float32
 	SlowDownDistance       float32
 	ObstacleDetectionRange float32
-	VectorToObstacle       rl.Vector2
-	AvoidanceVelocity      rl.Vector2
-	AvoidanceForce         float32
+	VectorToWall           rl.Vector2 // DEBUG
+	WallAvoidanceVelocity  rl.Vector2
+	WallAvoidanceForce     float32
+	RobotDetectionRange    float32
+	RobotAvoidanceVelocity rl.Vector2
+	RobotAvoidanceForce    float32
 
 	Color rl.Color
 }
@@ -43,9 +47,12 @@ func NewRobotEntity() *RobotEntity {
 		MaximumForce:           0.7,
 		SlowDownDistance:       300,
 		ObstacleDetectionRange: 150,
-		VectorToObstacle:       rl.Vector2Zero(),
-		AvoidanceVelocity:      rl.Vector2Zero(),
-		AvoidanceForce:         0.65,
+		VectorToWall:           rl.Vector2Zero(),
+		WallAvoidanceVelocity:  rl.Vector2Zero(),
+		WallAvoidanceForce:     0.4,
+		RobotDetectionRange:    40,
+		RobotAvoidanceVelocity: rl.Vector2Zero(),
+		RobotAvoidanceForce:    0.4,
 		Color:                  rl.NewColor(uint8(rand.Int()%255), uint8(rand.Int()%255), uint8(rand.Int()%255), 255),
 	}
 	return new_ent
@@ -57,8 +64,30 @@ func (ent *RobotEntity) Init() {
 func (ent *RobotEntity) Deinit() {
 }
 
-func (ent *RobotEntity) FindClosestWall(obstacles []rl.Vector2) rl.Vector2 {
-	// TODO:
+func (ent *RobotEntity) AvoidRobot(robots []*RobotEntity) rl.Vector2 {
+	var robotVectorsInRange []rl.Vector2
+	for _, robot := range robots {
+		if rl.Vector2Length(rl.Vector2Subtract(ent.GetPosition(), robot.GetPosition())) < ent.RobotDetectionRange {
+			robotVectorsInRange = append(robotVectorsInRange, robot.GetPosition())
+			fmt.Println("fount a robot at", robot.GetPosition())
+		}
+	}
+
+	resultingForce := rl.Vector2Zero()
+	for _, v := range robotVectorsInRange {
+		resultingForce = rl.Vector2Add(resultingForce, v)
+	}
+
+	// calculate the steering
+	resultingForce = rl.Vector2Subtract(resultingForce, ent.RobotAvoidanceVelocity)
+
+	resultingForce = rl.Vector2ClampValue(resultingForce, 0, ent.RobotAvoidanceForce)
+
+	return rl.Vector2Scale(resultingForce, -1)
+}
+
+func (ent *RobotEntity) AvoidWall(obstacles []rl.Vector2) rl.Vector2 {
+	// TODO: update in branch ff_3 to correct functionality!
 	closestObstacle := rl.Vector2Zero()
 	closestObstacleLength := math.MaxFloat64
 
@@ -78,12 +107,13 @@ func (ent *RobotEntity) FindClosestWall(obstacles []rl.Vector2) rl.Vector2 {
 	}
 
 	// for debug purposes
-	ent.VectorToObstacle = closestObstacle
+	ent.VectorToWall = closestObstacle
 
 	// NOTE: somehow this all just magically works yeey ?? \./
 
+	closestObstacle = rl.Vector2Subtract(closestObstacle, ent.WallAvoidanceVelocity)
 	// limit the steering by the AvoidanceForce
-	closestObstacle = rl.Vector2ClampValue(closestObstacle, 0, float32(ent.AvoidanceForce))
+	closestObstacle = rl.Vector2ClampValue(closestObstacle, 0, float32(ent.WallAvoidanceForce))
 
 	// this should be the force pushing the robot away from the obstacle
 	// so we have to multiply it with -1
@@ -121,7 +151,8 @@ func (ent *RobotEntity) Update() {
 
 	// MOVEMENT
 	ent.ApplyForce(ent.Arrive())
-	ent.ApplyForce(ent.AvoidanceVelocity)
+	ent.ApplyForce(ent.WallAvoidanceVelocity)
+	ent.ApplyForce(ent.RobotAvoidanceVelocity)
 
 	ent.Velocity = rl.Vector2Add(ent.Velocity, ent.Acceleration)
 	ent.Velocity = rl.Vector2ClampValue(ent.Velocity, 0, ent.MaximumSpeed)
@@ -137,9 +168,11 @@ func (ent *RobotEntity) Draw() {
 	// draw avoidance velocity
 	// rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.AvoidanceVelocity), rl.Red)
 	// draw vector to closest obstacle
-	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.VectorToObstacle), rl.Red)
-	// draw AvoidanceVelocity
-	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.AvoidanceVelocity), rl.Red)
+	// rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.VectorToObstacle), rl.Red)
+	// draw WallAvoidanceVelocity
+	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.WallAvoidanceVelocity), rl.Red)
+	// draw RobotAvoidanceVelocity
+	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.RobotAvoidanceVelocity), rl.Blue)
 }
 
 func (ent *RobotEntity) OnInputEvent(event *input.InputEvent) bool {
