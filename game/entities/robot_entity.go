@@ -129,32 +129,8 @@ func (ent *RobotEntity) CalculateCohesionForce(nearbyRobots []*RobotEntity) rl.V
 
 //==================================================================================================
 
-// func (ent *RobotEntity) AvoidRobot(robots []*RobotEntity) rl.Vector2 {
-// 	var robotVectorsInRange []rl.Vector2
-// 	for _, robot := range robots {
-// 		if rl.Vector2Length(rl.Vector2Subtract(ent.GetPosition(), robot.GetPosition())) < ent.RobotDetectionRange {
-// 			if ent.RobotName != robot.RobotName {
-// 				robotVectorsInRange = append(robotVectorsInRange, robot.GetPosition())
-// 			}
-// 		}
-// 	}
-//
-// 	resultingForce := rl.Vector2Zero()
-// 	for _, v := range robotVectorsInRange {
-// 		resultingForce = rl.Vector2Add(resultingForce, v)
-// 	}
-//
-// 	// calculate the steering
-// 	// resultingForce = rl.Vector2Subtract(resultingForce, ent.RobotAvoidanceVelocity)
-// 	resultingForce = rl.Vector2Subtract(ent.RobotAvoidanceVelocity, resultingForce)
-//
-// 	resultingForce = rl.Vector2ClampValue(resultingForce, 0, ent.RobotAvoidanceForce)
-//
-// 	return rl.Vector2Scale(resultingForce, -1)
-// }
-
 func (ent *RobotEntity) AvoidWall(obstacles []rl.Vector2) rl.Vector2 {
-	closestObstacle := rl.Vector2Zero()
+	force := rl.Vector2Zero()
 	closestObstacleLength := math.MaxFloat64
 
 	for _, obstacle := range obstacles {
@@ -162,28 +138,26 @@ func (ent *RobotEntity) AvoidWall(obstacles []rl.Vector2) rl.Vector2 {
 		currentLength := float64(rl.Vector2Length(vecToObstacle))
 		// if float32(closestObstacleLength) < 150 && currentLength < float32(closestObstacleLength) {
 		if currentLength < closestObstacleLength {
-			closestObstacle = vecToObstacle
+			force = vecToObstacle
 			closestObstacleLength = float64(currentLength)
 		}
 	}
 
 	// for some reason this works, but not if the check is above in the if clause of the loop
 	if closestObstacleLength > float64(ent.WallDetectionRange) {
-		closestObstacle = rl.Vector2Zero()
+		force = rl.Vector2Zero()
 	}
 
 	// for debug purposes
-	ent.ClosestWall = closestObstacle
+	ent.ClosestWall = force
 
-	// NOTE: somehow this all just magically works yeey ?? \./
-
-	closestObstacle = rl.Vector2Subtract(closestObstacle, ent.WallAvoidanceVelocity)
+	force = rl.Vector2Subtract(force, ent.WallAvoidanceVelocity)
 	// limit the steering by the AvoidanceForce
-	closestObstacle = rl.Vector2ClampValue(closestObstacle, 0, float32(ent.WallAvoidanceForce))
+	force = rl.Vector2ClampValue(force, float32(ent.WallAvoidanceForce), float32(ent.WallAvoidanceForce))
 
 	// this should be the force pushing the robot away from the obstacle
 	// so we have to multiply it with -1
-	return rl.Vector2Scale(closestObstacle, -1)
+	return rl.Vector2Scale(force, -1)
 }
 
 // like seek, but slows down the closer the target is
@@ -215,28 +189,26 @@ func (ent *RobotEntity) ApplyForce(force rl.Vector2) {
 
 func (ent *RobotEntity) Update() {
 
-	// TODO: if we hit a wall, we stop the robot
-	if !ent.HasCrashed {
-		// TODO: if we have room for performance
-	}
-
 	// MOVEMENT
-	ent.ApplyForce(ent.Arrive())
-	ent.ApplyForce(ent.WallAvoidanceVelocity)
-	ent.ApplyForce(ent.RobotSeperationVelocity)
-	ent.ApplyForce(ent.RobotAlignmentVelocity)
+	if !ent.HasCrashed {
+		ent.ApplyForce(ent.Arrive())
+		ent.ApplyForce(ent.WallAvoidanceVelocity)
+		ent.ApplyForce(ent.RobotSeperationVelocity)
+		ent.ApplyForce(ent.RobotAlignmentVelocity)
 
-	ent.Velocity = rl.Vector2Add(ent.Velocity, ent.Acceleration)
-	ent.Velocity = rl.Vector2ClampValue(ent.Velocity, 0, ent.MaximumSpeed)
+		ent.Velocity = rl.Vector2Add(ent.Velocity, ent.Acceleration)
+		ent.Velocity = rl.Vector2ClampValue(ent.Velocity, 0, ent.MaximumSpeed)
 
-	if ent.GetTilePosition() != ent.FinalTarget {
+		if ent.GetTilePosition() != ent.FinalTarget {
 
-		scaledFrameTime := rl.GetFrameTime() * ent.SimSpeed
-		ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.Velocity, scaledFrameTime)))
+			scaledFrameTime := rl.GetFrameTime() * ent.SimSpeed
+			ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.Velocity, scaledFrameTime)))
+		}
 	}
 
 	ent.Acceleration = rl.Vector2Zero()
-	ent.WallAvoidanceVelocity = rl.Vector2Zero()
+	// TODO: uncomment
+	// ent.WallAvoidanceVelocity = rl.Vector2Zero()
 	ent.RobotSeperationVelocity = rl.Vector2Zero()
 	ent.RobotAlignmentVelocity = rl.Vector2Zero()
 }
@@ -246,6 +218,10 @@ func (ent *RobotEntity) Draw() {
 	// draw the velocity to see where the robot is going
 	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.Velocity), rl.Black)
 	// rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.ClosestWall), rl.Red)
+	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.WallAvoidanceVelocity, ent.GetPosition()), rl.Green)
+	// TODO: remove, this belongs in Update
+	ent.WallAvoidanceVelocity = rl.Vector2Zero()
+
 	// rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.WallAvoidanceVelocity, 50)), rl.Red)
 	// rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.RobotSeperationVelocity, 50)), rl.Black)
 	// draw wall detection range

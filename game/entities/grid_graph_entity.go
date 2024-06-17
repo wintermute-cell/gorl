@@ -52,7 +52,7 @@ func NewGridGraphEntity() *GridGraphEntity {
 		rbMaximumForce:        2.5,
 		rbSlowDownDistance:    300,
 		rbWallDetectionRange:  100,
-		rbWallAvoidanceForce:  1.0,
+		rbWallAvoidanceForce:  3,
 		rbRobotDetectionRange: 60,
 		rbSeperationStrength:  50,
 		rbAlignmentStrength:   2,
@@ -86,7 +86,15 @@ func (ent *GridGraphEntity) Deinit() {
 }
 
 func (ent *GridGraphEntity) Update() {
-	// Apply ui changes to the Robots
+	// check if a robot is in a wall, if so, it has crashed
+	for _, robot := range ent.Robots {
+		for _, wall := range ent.Gg.WallVCoordinates {
+			if rl.Vector2Equals(robot.GetTilePosition(), wall) {
+				robot.HasCrashed = true
+			}
+		}
+	}
+	// Apply ui slider changes to the Robots
 	for _, robot := range ent.Robots {
 		robot.MaximumSpeed = ent.rbMaximumSpeed
 		robot.MaximumForce = ent.rbMaximumForce
@@ -100,6 +108,7 @@ func (ent *GridGraphEntity) Update() {
 		robot.SimSpeed = ent.SimulationSpeed
 	}
 
+	// TODO: remove cast, use ent.Robots
 	// ROBOT MOVEMENT
 	for _, robot := range gem.GetChildren(ent) {
 		robotEntity, ok := robot.(*RobotEntity)
@@ -113,12 +122,11 @@ func (ent *GridGraphEntity) Update() {
 			robotEntity.FinalTarget = rl.Vector2Add(robotEntity.FinalTarget, rl.NewVector2(20, 20))
 		}
 
-		// robotEntity.WallAvoidanceVelocity = robotEntity.AvoidWall(ent.Gg.ObstaclesVRenderSpace)
+		robotEntity.WallAvoidanceVelocity = robotEntity.AvoidWall(ent.Gg.WallVRenderSpace)
 		robotEntity.RobotSeperationVelocity = robotEntity.CalculateSeparationForce(ent.Robots)
 		robotEntity.RobotAlignmentVelocity = robotEntity.CalculateAlignmentForce(ent.Robots)
 		robotEntity.RobotCohesionVelocity = robotEntity.CalculateCohesionForce(ent.Robots)
 
-		//==========================================
 		// flow field movement
 		flowVector := ent.Gg.GetFlowVector(robotEntity.GetPosition())
 		// if the flowVector is a Vector2Zero, we are either at the target, or drove into a wall,
@@ -127,6 +135,10 @@ func (ent *GridGraphEntity) Update() {
 			robotEntity.CurrentTarget = robotEntity.GetPosition()
 			robotEntity.Acceleration = rl.Vector2Zero()
 			robotEntity.Velocity = rl.Vector2Zero()
+			robotEntity.WallAvoidanceVelocity = rl.Vector2Zero()
+			robotEntity.RobotSeperationVelocity = rl.Vector2Zero()
+			robotEntity.RobotAlignmentVelocity = rl.Vector2Zero()
+			robotEntity.RobotCohesionVelocity = rl.Vector2Zero()
 		}
 
 		// check for target != nil, because in that case dijkstra has not been called yet
@@ -307,7 +319,7 @@ func (ent *GridGraphEntity) Draw() {
 		"wall avoidance force",
 		ent.rbWallAvoidanceForce,
 		0,
-		40,
+		10,
 	)
 	ent.rbRobotDetectionRange = rg.Slider(
 		rl.NewRectangle(40, 250, 300, 20),
@@ -323,7 +335,7 @@ func (ent *GridGraphEntity) Draw() {
 		"seperation str",
 		ent.rbSeperationStrength,
 		0,
-		300,
+		100,
 	)
 	ent.rbAlignmentStrength = rg.Slider(
 		rl.NewRectangle(40, 310, 300, 20),
@@ -331,7 +343,7 @@ func (ent *GridGraphEntity) Draw() {
 		"alignment str",
 		ent.rbAlignmentStrength,
 		0,
-		300,
+		10,
 	)
 	ent.rbCohesionStrength = rg.Slider(
 		rl.NewRectangle(40, 340, 300, 20),
@@ -339,7 +351,7 @@ func (ent *GridGraphEntity) Draw() {
 		"cohesion str",
 		ent.rbCohesionStrength,
 		0,
-		300,
+		10,
 	)
 	ent.SimulationSpeed = rg.Slider(
 		rl.NewRectangle(40, 370, 300, 20),
@@ -395,15 +407,15 @@ const (
 type GridGraph struct {
 	// Vertices  []*Vertex NOTE: because I only need a grid graph that has coordinates, the vertices[] are not needed,
 	// NOTE: they are included in the VertexMap
-	Width                 int
-	Height                int
-	VertexMap             map[rl.Vector2]*Vertex
-	ObstaclesVRenderSpace []rl.Vector2
-	ObstaclesVCoordinates []rl.Vector2
-	TileSize              int32
-	DrawOffset            rl.Vector2
-	TextSize              int
-	Target                *Vertex
+	Width            int
+	Height           int
+	VertexMap        map[rl.Vector2]*Vertex
+	WallVRenderSpace []rl.Vector2
+	WallVCoordinates []rl.Vector2
+	TileSize         int32
+	DrawOffset       rl.Vector2
+	TextSize         int
+	Target           *Vertex
 }
 
 // A Vertex is a node that belongs to a graph and can have an arbitrary number
@@ -656,15 +668,15 @@ func (gg *GridGraph) RemoveUnreachableTiles(position rl.Vector2) {
 // Sets an "obstacle" in the graph. Basically removes a vertex from the grid graph
 func (gg *GridGraph) SetObstacle(position rl.Vector2) {
 	// add the obstacle as tile position to its slice
-	i := slices.Index(gg.ObstaclesVCoordinates, position)
+	i := slices.Index(gg.WallVCoordinates, position)
 	if i == -1 {
-		gg.ObstaclesVCoordinates = append(gg.ObstaclesVCoordinates, position)
+		gg.WallVCoordinates = append(gg.WallVCoordinates, position)
 	}
 	// add the obstacle as render position to its slice if it is not already in there
 	obstVRenderSpace := rl.Vector2Add(rl.Vector2Scale(position, 40), rl.NewVector2(20, 20))
-	i = slices.Index(gg.ObstaclesVRenderSpace, obstVRenderSpace)
+	i = slices.Index(gg.WallVRenderSpace, obstVRenderSpace)
 	if i == -1 {
-		gg.ObstaclesVRenderSpace = append(gg.ObstaclesVRenderSpace, obstVRenderSpace)
+		gg.WallVRenderSpace = append(gg.WallVRenderSpace, obstVRenderSpace)
 	}
 	// check if position is (still) in the grid graph
 	if obstacleVert, ok := gg.VertexMap[position]; ok {
