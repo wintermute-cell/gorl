@@ -209,14 +209,16 @@ func (ent *VfhActorEntity) Draw() {
 	)
 
 	// Draw the direction towards the goal
-	goalDirection := rl.Vector2Normalize(
-		rl.Vector2Subtract(ent.goal, ent.GetPosition()),
-	)
-	rl.DrawLineV(
-		ent.GetPosition(),
-		rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(goalDirection, 50)),
-		rl.Green,
-	)
+	if ent.isGoalDirected {
+		goalDirection := rl.Vector2Normalize(
+			rl.Vector2Subtract(ent.goal, ent.GetPosition()),
+		)
+		rl.DrawLineV(
+			ent.GetPosition(),
+			rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(goalDirection, 50)),
+			rl.Green,
+		)
+	}
 
 	// Draw the intersection points
 	for _, hit := range ent.rayHits {
