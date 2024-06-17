@@ -48,14 +48,16 @@ func (scn *FlowFieldScene) Init() {
 	testRobot3.SetPosition(rl.NewVector2(float32(30)*40+20, float32(15)*40+20))
 	testRobot4 := entities.NewRobotEntity()
 	testRobot4.SetPosition(rl.NewVector2(float32(40)*40+20, float32(23)*40+20))
-	testrobot5 := entities.NewRobotEntity()
-	testrobot5.SetPosition(rl.NewVector2(float32(11)*40+20, float32(10)*40+20))
+	testRobot5 := entities.NewRobotEntity()
+	testRobot5.SetPosition(rl.NewVector2(float32(11)*40+20, float32(10)*40+20))
+	testRobot1.RobotName = "1"
+	testRobot5.RobotName = "2"
 
 	gem.Append(gridGraph, testRobot1)
 	// gem.Append(gridGraph, testRobot2)
 	// gem.Append(gridGraph, testRobot3)
 	// gem.Append(gridGraph, testRobot4)
-	gem.Append(gridGraph, testrobot5)
+	gem.Append(gridGraph, testRobot5)
 
 	gridGraph.InitRobots()
 	//

@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"fmt"
 	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_event"
 	"math"
@@ -32,7 +31,8 @@ type RobotEntity struct {
 	RobotAvoidanceVelocity rl.Vector2
 	RobotAvoidanceForce    float32
 
-	Color rl.Color
+	Color     rl.Color
+	RobotName string
 }
 
 // NewRobotEntity creates a new instance of the RobotEntity.
@@ -50,7 +50,7 @@ func NewRobotEntity() *RobotEntity {
 		VectorToWall:           rl.Vector2Zero(),
 		WallAvoidanceVelocity:  rl.Vector2Zero(),
 		WallAvoidanceForce:     0.4,
-		RobotDetectionRange:    40,
+		RobotDetectionRange:    50,
 		RobotAvoidanceVelocity: rl.Vector2Zero(),
 		RobotAvoidanceForce:    0.4,
 		Color:                  rl.NewColor(uint8(rand.Int()%255), uint8(rand.Int()%255), uint8(rand.Int()%255), 255),
@@ -68,8 +68,9 @@ func (ent *RobotEntity) AvoidRobot(robots []*RobotEntity) rl.Vector2 {
 	var robotVectorsInRange []rl.Vector2
 	for _, robot := range robots {
 		if rl.Vector2Length(rl.Vector2Subtract(ent.GetPosition(), robot.GetPosition())) < ent.RobotDetectionRange {
-			robotVectorsInRange = append(robotVectorsInRange, robot.GetPosition())
-			fmt.Println("fount a robot at", robot.GetPosition())
+			if ent.RobotName != robot.RobotName {
+				robotVectorsInRange = append(robotVectorsInRange, robot.GetPosition())
+			}
 		}
 	}
 
@@ -79,7 +80,8 @@ func (ent *RobotEntity) AvoidRobot(robots []*RobotEntity) rl.Vector2 {
 	}
 
 	// calculate the steering
-	resultingForce = rl.Vector2Subtract(resultingForce, ent.RobotAvoidanceVelocity)
+	// resultingForce = rl.Vector2Subtract(resultingForce, ent.RobotAvoidanceVelocity)
+	resultingForce = rl.Vector2Subtract(ent.RobotAvoidanceVelocity, resultingForce)
 
 	resultingForce = rl.Vector2ClampValue(resultingForce, 0, ent.RobotAvoidanceForce)
 
@@ -87,7 +89,6 @@ func (ent *RobotEntity) AvoidRobot(robots []*RobotEntity) rl.Vector2 {
 }
 
 func (ent *RobotEntity) AvoidWall(obstacles []rl.Vector2) rl.Vector2 {
-	// TODO: update in branch ff_3 to correct functionality!
 	closestObstacle := rl.Vector2Zero()
 	closestObstacleLength := math.MaxFloat64
 
@@ -170,9 +171,12 @@ func (ent *RobotEntity) Draw() {
 	// draw vector to closest obstacle
 	// rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.VectorToObstacle), rl.Red)
 	// draw WallAvoidanceVelocity
-	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.WallAvoidanceVelocity), rl.Red)
+	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.WallAvoidanceVelocity, 50)), rl.Red)
 	// draw RobotAvoidanceVelocity
-	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.RobotAvoidanceVelocity), rl.Blue)
+	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.RobotAvoidanceVelocity, 50)), rl.Black)
+	// fmt.Println("wallavoidancevelocity", rl.Vector2ClampValue(ent.WallAvoidanceVelocity, 50, 50))
+	// draw RobotAvoidanceVelocity
+	// rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.RobotAvoidanceVelocity), rl.Blue)
 }
 
 func (ent *RobotEntity) OnInputEvent(event *input.InputEvent) bool {
