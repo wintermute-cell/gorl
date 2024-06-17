@@ -292,7 +292,7 @@ func (ent *GridGraphEntity) Draw() {
 	ent.rbMaximumForce = rg.Slider(
 		rl.NewRectangle(40, 130, 300, 20),
 		fmt.Sprintf("%v", roundFloat(ent.rbMaximumForce, 2)),
-		"slow down distance",
+		"maximum force",
 		ent.rbMaximumForce,
 		0,
 		40,
