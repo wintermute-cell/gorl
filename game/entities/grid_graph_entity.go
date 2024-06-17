@@ -58,7 +58,7 @@ func (ent *GridGraphEntity) Update() {
 			robotEntity.FinalTarget = rl.Vector2Add(robotEntity.FinalTarget, rl.NewVector2(20, 20))
 		}
 
-		robotEntity.AvoidanceVelocity = robotEntity.FindClosestWall(ent.Gg.ObstaclesVRenderSpace)
+		robotEntity.WallAvoidanceVelocity = robotEntity.FindClosestWall(ent.Gg.ObstaclesVRenderSpace)
 
 		//==========================================
 		// flow field movement

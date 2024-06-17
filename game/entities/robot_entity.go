@@ -25,8 +25,8 @@ type RobotEntity struct {
 	SlowDownDistance       float32
 	ObstacleDetectionRange float32
 	VectorToObstacle       rl.Vector2
-	AvoidanceVelocity      rl.Vector2
-	AvoidanceForce         float32
+	WallAvoidanceVelocity  rl.Vector2
+	WallAvoidanceForce     float32
 
 	Color rl.Color
 }
@@ -44,8 +44,8 @@ func NewRobotEntity() *RobotEntity {
 		SlowDownDistance:       300,
 		ObstacleDetectionRange: 150,
 		VectorToObstacle:       rl.Vector2Zero(),
-		AvoidanceVelocity:      rl.Vector2Zero(),
-		AvoidanceForce:         0.65,
+		WallAvoidanceVelocity:  rl.Vector2Zero(),
+		WallAvoidanceForce:     0.4,
 		Color:                  rl.NewColor(uint8(rand.Int()%255), uint8(rand.Int()%255), uint8(rand.Int()%255), 255),
 	}
 	return new_ent
@@ -82,8 +82,9 @@ func (ent *RobotEntity) FindClosestWall(obstacles []rl.Vector2) rl.Vector2 {
 
 	// NOTE: somehow this all just magically works yeey ?? \./
 
+	closestObstacle = rl.Vector2Subtract(closestObstacle, ent.WallAvoidanceVelocity)
 	// limit the steering by the AvoidanceForce
-	closestObstacle = rl.Vector2ClampValue(closestObstacle, 0, float32(ent.AvoidanceForce))
+	closestObstacle = rl.Vector2ClampValue(closestObstacle, 0, float32(ent.WallAvoidanceForce))
 
 	// this should be the force pushing the robot away from the obstacle
 	// so we have to multiply it with -1
@@ -121,7 +122,7 @@ func (ent *RobotEntity) Update() {
 
 	// MOVEMENT
 	ent.ApplyForce(ent.Arrive())
-	ent.ApplyForce(ent.AvoidanceVelocity)
+	ent.ApplyForce(ent.WallAvoidanceVelocity)
 
 	ent.Velocity = rl.Vector2Add(ent.Velocity, ent.Acceleration)
 	ent.Velocity = rl.Vector2ClampValue(ent.Velocity, 0, ent.MaximumSpeed)
@@ -139,7 +140,7 @@ func (ent *RobotEntity) Draw() {
 	// draw vector to closest obstacle
 	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.VectorToObstacle), rl.Red)
 	// draw AvoidanceVelocity
-	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.AvoidanceVelocity), rl.Red)
+	rl.DrawLineV(ent.GetPosition(), rl.Vector2Add(ent.GetPosition(), ent.WallAvoidanceVelocity), rl.Red)
 }
 
 func (ent *RobotEntity) OnInputEvent(event *input.InputEvent) bool {
