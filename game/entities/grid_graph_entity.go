@@ -2,14 +2,14 @@ package entities
 
 import (
 	"fmt"
+	rg "github.com/gen2brain/raylib-go/raygui"
+	rl "github.com/gen2brain/raylib-go/raylib"
 	"gorl/fw/core/entities"
 	"gorl/fw/core/gem"
 	input "gorl/fw/core/input/input_event"
 	"image/color"
 	"math"
 	"slices"
-
-	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 // Ensure that GridGraphEntity implements IEntity.
@@ -21,16 +21,43 @@ type GridGraphEntity struct {
 	Gg               *GridGraph
 	pixelTracks      map[rl.Vector2]rl.Color
 	Robots           []*RobotEntity
+
+	// UI MODE
+	IsInUiMode bool
+
+	// robot values for ui
+	rbMaximumSpeed        float32
+	rbMaximumForce        float32
+	rbSlowDownDistance    float32
+	rbWallDetectionRange  float32
+	rbWallAvoidanceForce  float32
+	rbRobotDetectionRange float32
+	rbSeperationStrength  float32
+	rbAlignmentStrength   float32
+	rbCohesionStrength    float32
+
+	// for slowing down or speeding up the simulation
+	SimulationSpeed float32
 }
 
 // NewGridGraphEntity creates a new instance of the GridGraphEntity.
 func NewGridGraphEntity() *GridGraphEntity {
-	// NOTE: you can modify the constructor to take any parameters you need to
-	// initialize the entity.
 	new_ent := &GridGraphEntity{
 		Entity:      entities.NewEntity("GridGraphEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
 		Gg:          NewGridGraph(100, 100),
 		pixelTracks: make(map[rl.Vector2]rl.Color),
+
+		// init robot values
+		rbMaximumSpeed:        150,
+		rbMaximumForce:        2.5,
+		rbSlowDownDistance:    300,
+		rbWallDetectionRange:  100,
+		rbWallAvoidanceForce:  1.0,
+		rbRobotDetectionRange: 60,
+		rbSeperationStrength:  50,
+		rbAlignmentStrength:   2,
+		rbCohesionStrength:    0,
+		SimulationSpeed:       0.5,
 	}
 	return new_ent
 }
@@ -51,7 +78,6 @@ func (ent *GridGraphEntity) InitRobots() {
 		robotEntity, ok := robot.(*RobotEntity)
 		if ok {
 			ent.Robots = append(ent.Robots, robotEntity)
-			fmt.Println("appending")
 		}
 	}
 }
@@ -60,6 +86,20 @@ func (ent *GridGraphEntity) Deinit() {
 }
 
 func (ent *GridGraphEntity) Update() {
+	// Apply ui changes to the Robots
+	for _, robot := range ent.Robots {
+		robot.MaximumSpeed = ent.rbMaximumSpeed
+		robot.MaximumForce = ent.rbMaximumForce
+		robot.SlowDownDistance = ent.rbSlowDownDistance
+		robot.WallDetectionRange = ent.rbWallDetectionRange
+		robot.WallAvoidanceForce = ent.rbWallAvoidanceForce
+		robot.RobotDetectionRange = ent.rbRobotDetectionRange
+		robot.RobotSeperationStrength = ent.rbSeperationStrength
+		robot.RobotAlignmentStrength = ent.rbAlignmentStrength
+		robot.RobotCohesionStrength = ent.rbCohesionStrength
+		robot.SimSpeed = ent.SimulationSpeed
+	}
+
 	// ROBOT MOVEMENT
 	for _, robot := range gem.GetChildren(ent) {
 		robotEntity, ok := robot.(*RobotEntity)
@@ -73,9 +113,10 @@ func (ent *GridGraphEntity) Update() {
 			robotEntity.FinalTarget = rl.Vector2Add(robotEntity.FinalTarget, rl.NewVector2(20, 20))
 		}
 
-		robotEntity.WallAvoidanceVelocity = robotEntity.AvoidWall(ent.Gg.ObstaclesVRenderSpace)
-		robotEntity.RobotAvoidanceVelocity = robotEntity.CalculateSeparationForce(ent.Robots)
-		// robotEntity.RobotAvoidanceVelocity = robotEntity.AvoidRobot(ent.Robots)
+		// robotEntity.WallAvoidanceVelocity = robotEntity.AvoidWall(ent.Gg.ObstaclesVRenderSpace)
+		robotEntity.RobotSeperationVelocity = robotEntity.CalculateSeparationForce(ent.Robots)
+		robotEntity.RobotAlignmentVelocity = robotEntity.CalculateAlignmentForce(ent.Robots)
+		robotEntity.RobotCohesionVelocity = robotEntity.CalculateCohesionForce(ent.Robots)
 
 		//==========================================
 		// flow field movement
@@ -217,35 +258,125 @@ func (ent *GridGraphEntity) Draw() {
 	}
 
 	// Draw tracks of robots
-	for p, c := range ent.pixelTracks {
-		rl.DrawPixelV(rl.Vector2Add(ent.GetPosition(), p), c)
-	}
+	// for p, c := range ent.pixelTracks {
+	// 	rl.DrawPixelV(rl.Vector2Add(ent.GetPosition(), p), c)
+	// }
 
 	// DEBUG draw obstacles
 	// for _, obst := range ent.Gg.ObstaclesVRenderSpace {
 	// 	rl.DrawCircleV(rl.Vector2Add(obst, ent.GetPosition()), 3, rl.White)
 	// }
+
+	// draw ui
+	// rbMaximumSpeed:        150,
+	ent.rbMaximumSpeed = rg.Slider(
+		rl.NewRectangle(40, 100, 300, 20),
+		fmt.Sprintf("%v", roundFloat(ent.rbMaximumSpeed, 2)),
+		"maximum speed",
+		ent.rbMaximumSpeed,
+		0,
+		300,
+	)
+	ent.rbMaximumForce = rg.Slider(
+		rl.NewRectangle(40, 130, 300, 20),
+		fmt.Sprintf("%v", roundFloat(ent.rbMaximumForce, 2)),
+		"slow down distance",
+		ent.rbMaximumForce,
+		0,
+		40,
+	)
+	ent.rbSlowDownDistance = rg.Slider(
+		rl.NewRectangle(40, 160, 300, 20),
+		fmt.Sprintf("%v", roundFloat(ent.rbSlowDownDistance, 2)),
+		"slow down distance",
+		ent.rbSlowDownDistance,
+		0,
+		1000,
+	)
+	ent.rbWallDetectionRange = rg.Slider(
+		rl.NewRectangle(40, 190, 300, 20),
+		fmt.Sprintf("%v", roundFloat(ent.rbWallDetectionRange, 2)),
+		"wall detection range",
+		ent.rbWallDetectionRange,
+		0,
+		500,
+	)
+	ent.rbWallAvoidanceForce = rg.Slider(
+		rl.NewRectangle(40, 220, 300, 20),
+		fmt.Sprintf("%v", roundFloat(ent.rbWallAvoidanceForce, 2)),
+		"wall avoidance force",
+		ent.rbWallAvoidanceForce,
+		0,
+		40,
+	)
+	ent.rbRobotDetectionRange = rg.Slider(
+		rl.NewRectangle(40, 250, 300, 20),
+		fmt.Sprintf("%v", roundFloat(ent.rbRobotDetectionRange, 2)),
+		"detection range",
+		ent.rbRobotDetectionRange,
+		0,
+		300,
+	)
+	ent.rbSeperationStrength = rg.Slider(
+		rl.NewRectangle(40, 280, 300, 20),
+		fmt.Sprintf("%v", roundFloat(ent.rbSeperationStrength, 2)),
+		"seperation str",
+		ent.rbSeperationStrength,
+		0,
+		300,
+	)
+	ent.rbAlignmentStrength = rg.Slider(
+		rl.NewRectangle(40, 310, 300, 20),
+		fmt.Sprintf("%v", roundFloat(ent.rbAlignmentStrength, 2)),
+		"alignment str",
+		ent.rbAlignmentStrength,
+		0,
+		300,
+	)
+	ent.rbCohesionStrength = rg.Slider(
+		rl.NewRectangle(40, 340, 300, 20),
+		fmt.Sprintf("%v", roundFloat(ent.rbCohesionStrength, 2)),
+		"cohesion str",
+		ent.rbCohesionStrength,
+		0,
+		300,
+	)
+	ent.SimulationSpeed = rg.Slider(
+		rl.NewRectangle(40, 370, 300, 20),
+		fmt.Sprintf("%v", roundFloat(ent.SimulationSpeed, 2)),
+		"sim speed",
+		ent.SimulationSpeed,
+		0,
+		1,
+	)
 }
 
 func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
-	if event.Action == input.ActionClickRightHeld {
-		ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.GetMouseDelta()))
-	}
-	sclMousePos := rl.Vector2Scale(
-		rl.Vector2Subtract(
-			rl.GetMousePosition(),
-			ent.GetPosition(),
-		),
-		1/float32(ent.Gg.TileSize),
-	)
-	sclMousePos = rl.NewVector2(float32(int(sclMousePos.X)), float32(int(sclMousePos.Y)))
 
-	if event.Action == input.ActionClickDown {
-		ent.Gg.RemoveUnreachableTiles(sclMousePos)
-		ent.Gg.Dijkstra(sclMousePos)
+	if event.Action == input.ActionEnterUiMode {
+		ent.IsInUiMode = !ent.IsInUiMode
 	}
-	if event.Action == input.ActionPlaceObstacle {
-		ent.Gg.SetObstacle(sclMousePos)
+
+	if !ent.IsInUiMode {
+		if event.Action == input.ActionClickRightHeld {
+			ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.GetMouseDelta()))
+		}
+		sclMousePos := rl.Vector2Scale(
+			rl.Vector2Subtract(
+				rl.GetMousePosition(),
+				ent.GetPosition(),
+			),
+			1/float32(ent.Gg.TileSize),
+		)
+		sclMousePos = rl.NewVector2(float32(int(sclMousePos.X)), float32(int(sclMousePos.Y)))
+
+		if event.Action == input.ActionClickDown {
+			ent.Gg.RemoveUnreachableTiles(sclMousePos)
+			ent.Gg.Dijkstra(sclMousePos)
+		}
+		if event.Action == input.ActionPlaceObstacle {
+			ent.Gg.SetObstacle(sclMousePos)
+		}
 	}
 	return true
 }
@@ -268,6 +399,7 @@ type GridGraph struct {
 	Height                int
 	VertexMap             map[rl.Vector2]*Vertex
 	ObstaclesVRenderSpace []rl.Vector2
+	ObstaclesVCoordinates []rl.Vector2
 	TileSize              int32
 	DrawOffset            rl.Vector2
 	TextSize              int
@@ -515,7 +647,7 @@ func (gg *GridGraph) RemoveUnreachableTiles(position rl.Vector2) {
 		delete(gg.VertexMap, vert.Coordinate)
 	}
 	// call set obstacles on the unreachable tiles
-	for k, _ := range gg.VertexMap {
+	for k := range gg.VertexMap {
 		gg.SetObstacle(k)
 	}
 	gg.VertexMap = newVertexMap
@@ -523,9 +655,14 @@ func (gg *GridGraph) RemoveUnreachableTiles(position rl.Vector2) {
 
 // Sets an "obstacle" in the graph. Basically removes a vertex from the grid graph
 func (gg *GridGraph) SetObstacle(position rl.Vector2) {
-	// add the obstacle to its slice if it is not already in there
+	// add the obstacle as tile position to its slice
+	i := slices.Index(gg.ObstaclesVCoordinates, position)
+	if i == -1 {
+		gg.ObstaclesVCoordinates = append(gg.ObstaclesVCoordinates, position)
+	}
+	// add the obstacle as render position to its slice if it is not already in there
 	obstVRenderSpace := rl.Vector2Add(rl.Vector2Scale(position, 40), rl.NewVector2(20, 20))
-	i := slices.Index(gg.ObstaclesVRenderSpace, obstVRenderSpace)
+	i = slices.Index(gg.ObstaclesVRenderSpace, obstVRenderSpace)
 	if i == -1 {
 		gg.ObstaclesVRenderSpace = append(gg.ObstaclesVRenderSpace, obstVRenderSpace)
 	}
@@ -655,4 +792,9 @@ func (gg *GridGraph) CalculateGridGraphFromImage(mapImage *rl.Image, tileSize in
 	for _, ob := range gridGraphObstacles {
 		gg.SetObstacle(rl.NewVector2(ob.X, ob.Y))
 	}
+}
+
+func roundFloat(val float32, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+	return math.Round(float64(val)*ratio) / ratio
 }

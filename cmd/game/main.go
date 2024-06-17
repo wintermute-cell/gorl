@@ -162,5 +162,5 @@ func DrawDebugInfo(frameTime time.Duration) {
 	//	[]*render.RenderStage{defaultRenderStage},
 	//)
 	//gem.DebugDrawEntities(rl.NewVector2(10, 50), 12)
-	gem.DebugDrawHierarchy(rl.NewVector2(10, 50), 8)
+	// gem.DebugDrawHierarchy(rl.NewVector2(10, 50), 8)
 }

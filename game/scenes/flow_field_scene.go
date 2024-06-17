@@ -43,18 +43,13 @@ func (scn *FlowFieldScene) Init() {
 	testRobot1 := entities.NewRobotEntity()
 	testRobot1.SetPosition(rl.NewVector2(float32(10)*40+20, float32(10)*40+20))
 	testRobot2 := entities.NewRobotEntity()
-	testRobot2.SetPosition(rl.NewVector2(float32(20)*40+20, float32(10)*40+20))
+	testRobot2.SetPosition(rl.NewVector2(float32(11)*40+20, float32(10)*40+20))
 	testRobot3 := entities.NewRobotEntity()
-	testRobot3.SetPosition(rl.NewVector2(float32(30)*40+20, float32(15)*40+20))
+	testRobot3.SetPosition(rl.NewVector2(float32(12)*40+20, float32(10)*40+20))
 	testRobot4 := entities.NewRobotEntity()
-	testRobot4.SetPosition(rl.NewVector2(float32(40)*40+20, float32(23)*40+20))
+	testRobot4.SetPosition(rl.NewVector2(float32(13)*40+20, float32(10)*40+20))
 	testRobot5 := entities.NewRobotEntity()
-	testRobot5.SetPosition(rl.NewVector2(float32(11)*40+20, float32(10)*40+20))
-	testRobot1.RobotName = "1"
-	testRobot2.RobotName = "2"
-	testRobot3.RobotName = "3"
-	testRobot4.RobotName = "4"
-	testRobot5.RobotName = "5"
+	testRobot5.SetPosition(rl.NewVector2(float32(14)*40+20, float32(10)*40+20))
 
 	gem.Append(gridGraph, testRobot1)
 	gem.Append(gridGraph, testRobot2)
@@ -62,8 +57,6 @@ func (scn *FlowFieldScene) Init() {
 	gem.Append(gridGraph, testRobot4)
 	gem.Append(gridGraph, testRobot5)
 
-	gridGraph.InitRobots()
-	//
 	// counter := 0
 	// for k := range gridGraph.Gg.VertexMap {
 	// 	counter++
@@ -73,6 +66,8 @@ func (scn *FlowFieldScene) Init() {
 	// 		gem.Append(gridGraph, testRobot)
 	// 	}
 	// }
+	//
+	gridGraph.InitRobots()
 
 }
 
