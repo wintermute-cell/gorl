@@ -83,6 +83,37 @@ func (ent *RobotEntity) Init() {
 func (ent *RobotEntity) Deinit() {
 }
 
+func (ent *RobotEntity) AvoidWall(obstacles []rl.Vector2) rl.Vector2 {
+	force := rl.Vector2Zero()
+	smallestDistance := math.MaxFloat64
+
+	for _, obstacle := range obstacles {
+		vecToObstacle := rl.Vector2Subtract(obstacle, ent.GetPosition())
+		currentLength := float64(rl.Vector2Length(vecToObstacle))
+		// if float32(closestObstacleLength) < 150 && currentLength < float32(closestObstacleLength) {
+		if currentLength < smallestDistance {
+			force = vecToObstacle
+			smallestDistance = float64(currentLength)
+		}
+	}
+
+	// for some reason this works, but not if the check is above in the if clause of the loop
+	if smallestDistance > float64(ent.WallDetectionRange) {
+		force = rl.Vector2Zero()
+	}
+
+	// for debug purposes
+	ent.ClosestWall = force
+
+	force = rl.Vector2Subtract(force, ent.WallAvoidanceVelocity)
+	// limit the steering by the AvoidanceForce
+	force = rl.Vector2ClampValue(force, float32(ent.WallAvoidanceForce), float32(ent.WallAvoidanceForce))
+
+	// this should be the force pushing the robot away from the obstacle
+	// so we have to multiply it with -1
+	return rl.Vector2Scale(force, -1)
+}
+
 // ========================================================================================00
 // JULIUS' FUNCTIONS
 func (ent *RobotEntity) CalculateSeparationForce(nearbyRobots []*RobotEntity) rl.Vector2 {
@@ -128,37 +159,6 @@ func (ent *RobotEntity) CalculateCohesionForce(nearbyRobots []*RobotEntity) rl.V
 }
 
 //==================================================================================================
-
-func (ent *RobotEntity) AvoidWall(obstacles []rl.Vector2) rl.Vector2 {
-	force := rl.Vector2Zero()
-	closestObstacleLength := math.MaxFloat64
-
-	for _, obstacle := range obstacles {
-		vecToObstacle := rl.Vector2Subtract(obstacle, ent.GetPosition())
-		currentLength := float64(rl.Vector2Length(vecToObstacle))
-		// if float32(closestObstacleLength) < 150 && currentLength < float32(closestObstacleLength) {
-		if currentLength < closestObstacleLength {
-			force = vecToObstacle
-			closestObstacleLength = float64(currentLength)
-		}
-	}
-
-	// for some reason this works, but not if the check is above in the if clause of the loop
-	if closestObstacleLength > float64(ent.WallDetectionRange) {
-		force = rl.Vector2Zero()
-	}
-
-	// for debug purposes
-	ent.ClosestWall = force
-
-	force = rl.Vector2Subtract(force, ent.WallAvoidanceVelocity)
-	// limit the steering by the AvoidanceForce
-	force = rl.Vector2ClampValue(force, float32(ent.WallAvoidanceForce), float32(ent.WallAvoidanceForce))
-
-	// this should be the force pushing the robot away from the obstacle
-	// so we have to multiply it with -1
-	return rl.Vector2Scale(force, -1)
-}
 
 // like seek, but slows down the closer the target is
 func (ent *RobotEntity) Arrive() rl.Vector2 {
