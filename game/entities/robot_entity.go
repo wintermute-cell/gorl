@@ -4,7 +4,6 @@ import (
 	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_event"
 	"gorl/fw/util"
-	"math"
 	"math/rand"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -17,17 +16,18 @@ var _ entities.IEntity = &RobotEntity{}
 type RobotEntity struct {
 	*entities.Entity // Required!
 
-	Velocity              rl.Vector2
-	Acceleration          rl.Vector2
-	CurrentTarget         rl.Vector2 // the next tile
-	FinalTarget           rl.Vector2 // the target tile
-	MaximumSpeed          float32
-	MaximumForce          float32
-	SlowDownDistance      float32
+	Velocity         rl.Vector2
+	Acceleration     rl.Vector2
+	CurrentTarget    rl.Vector2 // the next tile
+	FinalTarget      rl.Vector2 // the target tile
+	MaximumSpeed     float32
+	MaximumForce     float32
+	SlowDownDistance float32
+
 	WallDetectionRange    float32
 	ClosestWall           rl.Vector2 // DEBUG
 	WallAvoidanceVelocity rl.Vector2
-	WallAvoidanceForce    float32
+	WallAvoidanceStrength float32
 
 	RobotDetectionRange     float32
 	RobotSeperationStrength float32
@@ -47,18 +47,19 @@ type RobotEntity struct {
 // NewRobotEntity creates a new instance of the RobotEntity.
 func NewRobotEntity() *RobotEntity {
 	new_ent := &RobotEntity{
-		Entity:                entities.NewEntity("RobotEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
-		Velocity:              rl.Vector2Zero(),
-		Acceleration:          rl.Vector2Zero(),
-		CurrentTarget:         rl.Vector2Zero(),
-		FinalTarget:           rl.Vector2Zero(),
-		MaximumSpeed:          150,
-		MaximumForce:          2.5,
-		SlowDownDistance:      300,
+		Entity:           entities.NewEntity("RobotEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
+		Velocity:         rl.Vector2Zero(),
+		Acceleration:     rl.Vector2Zero(),
+		CurrentTarget:    rl.Vector2Zero(),
+		FinalTarget:      rl.Vector2Zero(),
+		MaximumSpeed:     150,
+		MaximumForce:     2.5,
+		SlowDownDistance: 300,
+
 		WallDetectionRange:    100,
 		ClosestWall:           rl.Vector2Zero(),
 		WallAvoidanceVelocity: rl.Vector2Zero(),
-		WallAvoidanceForce:    1.0,
+		WallAvoidanceStrength: 50,
 
 		RobotDetectionRange:     60,
 		RobotSeperationStrength: 50,
@@ -83,35 +84,50 @@ func (ent *RobotEntity) Init() {
 func (ent *RobotEntity) Deinit() {
 }
 
-func (ent *RobotEntity) AvoidWall(obstacles []rl.Vector2) rl.Vector2 {
-	force := rl.Vector2Zero()
-	smallestDistance := math.MaxFloat64
+// func (ent *RobotEntity) AvoidWall(obstacles []rl.Vector2) rl.Vector2 {
+// 	force := rl.Vector2Zero()
+// 	smallestDistance := math.MaxFloat64
+//
+// 	for _, obstacle := range obstacles {
+// 		diffVector := rl.Vector2Subtract(obstacle, ent.GetPosition())
+// 		currentLength := float64(rl.Vector2Length(diffVector))
+// 		// if float32(closestObstacleLength) < 150 && currentLength < float32(closestObstacleLength) {
+// 		if currentLength < smallestDistance {
+// 			force = rl.Vector2Normalize(diffVector)
+// 			smallestDistance = float64(currentLength)
+// 		}
+// 	}
+//
+// 	// for debug purposes
+// 	ent.ClosestWall = force
+//
+// 	// for some reason this works, but not if the check is above in the if clause of the loop
+// 	if smallestDistance > float64(ent.WallDetectionRange) {
+// 		force = rl.Vector2Zero()
+// 	} else {
+// 		force = rl.Vector2Scale(force, ent.WallAvoidanceStrength/float32(smallestDistance/1000))
+// 	}
+//
+// 	// limit the steering by the AvoidanceForce
+// 	// force = rl.Vector2ClampValue(force, float32(ent.WallAvoidanceStrength), float32(ent.WallAvoidanceStrength))
+//
+// 	// this should be the force pushing the robot away from the obstacle
+// 	// so we have to multiply it with -1
+// 	return rl.Vector2Scale(force, -1)
+// }
 
-	for _, obstacle := range obstacles {
-		vecToObstacle := rl.Vector2Subtract(obstacle, ent.GetPosition())
-		currentLength := float64(rl.Vector2Length(vecToObstacle))
-		// if float32(closestObstacleLength) < 150 && currentLength < float32(closestObstacleLength) {
-		if currentLength < smallestDistance {
-			force = vecToObstacle
-			smallestDistance = float64(currentLength)
+// REWRITTEN
+func (ent *RobotEntity) AvoidWall(nearbyWalls []rl.Vector2) rl.Vector2 {
+	var force rl.Vector2
+	for _, nearbyWall := range nearbyWalls {
+		diff := rl.Vector2Subtract(ent.GetPosition(), nearbyWall)
+		distance := rl.Vector2Length(diff)
+		if distance < ent.WallDetectionRange && distance > 0 {
+			pushForce := rl.Vector2Scale(util.Vector2NormalizeSafe(diff), ent.WallAvoidanceStrength/distance)
+			force = rl.Vector2Add(force, pushForce)
 		}
 	}
-
-	// for some reason this works, but not if the check is above in the if clause of the loop
-	if smallestDistance > float64(ent.WallDetectionRange) {
-		force = rl.Vector2Zero()
-	}
-
-	// for debug purposes
-	ent.ClosestWall = force
-
-	force = rl.Vector2Subtract(force, ent.WallAvoidanceVelocity)
-	// limit the steering by the AvoidanceForce
-	force = rl.Vector2ClampValue(force, float32(ent.WallAvoidanceForce), float32(ent.WallAvoidanceForce))
-
-	// this should be the force pushing the robot away from the obstacle
-	// so we have to multiply it with -1
-	return rl.Vector2Scale(force, -1)
+	return force
 }
 
 // ========================================================================================00

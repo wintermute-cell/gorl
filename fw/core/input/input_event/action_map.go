@@ -20,6 +20,7 @@ const (
 	ActionMouseHover
 	ActionEscape
 	ActionEnterUiMode
+	ActionShowHelp
 	// Add other actions as needed
 )
 
@@ -65,6 +66,9 @@ var ActionMap = map[Action][]Trigger{
 	},
 	ActionEnterUiMode: {
 		{InputType: InputTypeKey, TriggerType: TriggerTypeReleased, Key: rl.KeyU},
+	},
+	ActionShowHelp: {
+		{InputType: InputTypeKey, TriggerType: TriggerTypeReleased, Key: rl.KeyH},
 	},
 	// Add other action-trigger mappings
 }

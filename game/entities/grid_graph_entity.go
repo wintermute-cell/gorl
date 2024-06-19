@@ -24,17 +24,18 @@ type GridGraphEntity struct {
 
 	// UI MODE
 	IsInUiMode bool
+	ShowHelp   bool
 
 	// robot values for ui
-	rbMaximumSpeed        float32
-	rbMaximumForce        float32
-	rbSlowDownDistance    float32
-	rbWallDetectionRange  float32
-	rbWallAvoidanceForce  float32
-	rbRobotDetectionRange float32
-	rbSeperationStrength  float32
-	rbAlignmentStrength   float32
-	rbCohesionStrength    float32
+	rbMaximumSpeed          float32
+	rbMaximumForce          float32
+	rbSlowDownDistance      float32
+	rbWallDetectionRange    float32
+	rbWallAvoidanceStrength float32
+	rbRobotDetectionRange   float32
+	rbSeperationStrength    float32
+	rbAlignmentStrength     float32
+	rbCohesionStrength      float32
 
 	// for slowing down or speeding up the simulation
 	SimulationSpeed float32
@@ -47,17 +48,19 @@ func NewGridGraphEntity() *GridGraphEntity {
 		Gg:          NewGridGraph(100, 100),
 		pixelTracks: make(map[rl.Vector2]rl.Color),
 
+		ShowHelp: true,
+
 		// init robot values
-		rbMaximumSpeed:        150,
-		rbMaximumForce:        2.5,
-		rbSlowDownDistance:    300,
-		rbWallDetectionRange:  100,
-		rbWallAvoidanceForce:  3,
-		rbRobotDetectionRange: 60,
-		rbSeperationStrength:  50,
-		rbAlignmentStrength:   2,
-		rbCohesionStrength:    0,
-		SimulationSpeed:       0.5,
+		rbMaximumSpeed:          150,
+		rbMaximumForce:          2.5,
+		rbSlowDownDistance:      300,
+		rbWallDetectionRange:    100,
+		rbWallAvoidanceStrength: 40,
+		rbRobotDetectionRange:   50,
+		rbSeperationStrength:    50,
+		rbAlignmentStrength:     1,
+		rbCohesionStrength:      1,
+		SimulationSpeed:         0.5,
 	}
 	return new_ent
 }
@@ -100,7 +103,7 @@ func (ent *GridGraphEntity) Update() {
 		robot.MaximumForce = ent.rbMaximumForce
 		robot.SlowDownDistance = ent.rbSlowDownDistance
 		robot.WallDetectionRange = ent.rbWallDetectionRange
-		robot.WallAvoidanceForce = ent.rbWallAvoidanceForce
+		robot.WallAvoidanceStrength = ent.rbWallAvoidanceStrength
 		robot.RobotDetectionRange = ent.rbRobotDetectionRange
 		robot.RobotSeperationStrength = ent.rbSeperationStrength
 		robot.RobotAlignmentStrength = ent.rbAlignmentStrength
@@ -308,23 +311,23 @@ func (ent *GridGraphEntity) Draw() {
 	ent.rbWallDetectionRange = rg.Slider(
 		rl.NewRectangle(40, 190, 300, 20),
 		fmt.Sprintf("%v", roundFloat(ent.rbWallDetectionRange, 2)),
-		"wall detection range",
+		"wall detection rng",
 		ent.rbWallDetectionRange,
 		0,
 		500,
 	)
-	ent.rbWallAvoidanceForce = rg.Slider(
+	ent.rbWallAvoidanceStrength = rg.Slider(
 		rl.NewRectangle(40, 220, 300, 20),
-		fmt.Sprintf("%v", roundFloat(ent.rbWallAvoidanceForce, 2)),
-		"wall avoidance force",
-		ent.rbWallAvoidanceForce,
+		fmt.Sprintf("%v", roundFloat(ent.rbWallAvoidanceStrength, 2)),
+		"wall avoidance str",
+		ent.rbWallAvoidanceStrength,
 		0,
-		10,
+		200,
 	)
 	ent.rbRobotDetectionRange = rg.Slider(
 		rl.NewRectangle(40, 250, 300, 20),
 		fmt.Sprintf("%v", roundFloat(ent.rbRobotDetectionRange, 2)),
-		"detection range",
+		"robot detection rng",
 		ent.rbRobotDetectionRange,
 		0,
 		300,
@@ -343,7 +346,7 @@ func (ent *GridGraphEntity) Draw() {
 		"alignment str",
 		ent.rbAlignmentStrength,
 		0,
-		10,
+		5,
 	)
 	ent.rbCohesionStrength = rg.Slider(
 		rl.NewRectangle(40, 340, 300, 20),
@@ -361,12 +364,25 @@ func (ent *GridGraphEntity) Draw() {
 		0,
 		1,
 	)
+	if ent.ShowHelp {
+		rg.Label(
+			rl.NewRectangle(40, 380, 300, 200),
+			"U - ui mode (deactivate mouse click)\n"+
+				"O - place obstacle\n"+
+				"H - show help\n"+
+				"Mouse Left - set target\n"+
+				"Mouse Right - drag grid graph\n",
+		)
+	}
 }
 
 func (ent *GridGraphEntity) OnInputEvent(event *input.InputEvent) bool {
 
 	if event.Action == input.ActionEnterUiMode {
 		ent.IsInUiMode = !ent.IsInUiMode
+	}
+	if event.Action == input.ActionShowHelp {
+		ent.ShowHelp = !ent.ShowHelp
 	}
 
 	if !ent.IsInUiMode {
