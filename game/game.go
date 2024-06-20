@@ -15,5 +15,7 @@ func Init() {
 	store.Add(cs)
 
 	scenes.RegisterScene("VFH", &gscenes.VfhScene{})
-	scenes.EnableScene("VFH")
+	scenes.RegisterScene("Angles", &gscenes.AnglesScene{})
+
+	scenes.EnableScene("Angles")
 }
