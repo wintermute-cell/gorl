@@ -287,16 +287,9 @@ func (ent *VfhActorEntity) VFHGoalOrientedCostFunction(vfh []rl.Vector2, goalDir
 		return util.Abs(v)
 	}
 
-	ii := 0
-	oc := float32(0)
-	gal := float32(0)
-	gar := float32(0)
-
 	for i := mid; i >= 0; i-- {
 		leftIdx := mid - i
 		rightIdx := mid + i
-
-		offCentral := delta(vfh[mid], vfh[leftIdx]) // centrality should be equal for both sides
 
 		goalAngleLeft := delta(goalDirection, vfh[leftIdx])
 		goalAngleRight := delta(goalDirection, vfh[rightIdx])
@@ -306,38 +299,19 @@ func (ent *VfhActorEntity) VFHGoalOrientedCostFunction(vfh []rl.Vector2, goalDir
 		right := vfh[rightIdx]
 		rightLen := rl.Vector2Length(right)
 
-		//centralityFactor := float32(1)
-		alignmentFactor := float32(1)
-
-		leftCost := alignmentFactor * goalAngleLeft
-		rightCost := alignmentFactor * goalAngleRight
-
 		if leftLen >= 0.000001 {
-			if leftCost < selectionCost {
+			if goalAngleLeft < selectionCost {
 				selection = left
-				selectionCost = leftCost
-				ii = -i
-				oc = offCentral
-				gal = goalAngleLeft
-				gar = goalAngleRight
+				selectionCost = goalAngleLeft
 			}
 		}
 		if rightLen >= 0.000001 {
-			if rightCost < selectionCost {
+			if goalAngleRight < selectionCost {
 				selection = right
-				selectionCost = rightCost
-				ii = i
-				oc = offCentral
-				gal = goalAngleLeft
-				gar = goalAngleRight
+				selectionCost = goalAngleRight
 			}
 		}
 	}
-
-	logging.Debug("%v", ii)
-	logging.Debug("Off central: %v", oc)
-	logging.Debug("Goal alignment left: %v", gal)
-	logging.Debug("Goal alignment right: %v", gar)
 
 	return selection
 }

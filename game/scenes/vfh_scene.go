@@ -46,14 +46,14 @@ func (scn *VfhScene) Init() {
 
 	baseStation := entities.NewBaseStationEntity(rl.NewVector2(430, 650))
 
-	actor := entities.NewVfhActorEntity(baseStation, rl.NewVector2(675, 840), 5, 120, 80)
+	actor := entities.NewVfhActorEntity(baseStation, rl.NewVector2(675, 840), 13, 120, 80)
 	gem.Append(scn.GetRoot(), actor)
 
-	//actor2 := entities.NewVfhActorEntity(baseStation, rl.NewVector2(1400, 820), 13, 120, 80)
-	//gem.Append(scn.GetRoot(), actor2)
+	actor2 := entities.NewVfhActorEntity(baseStation, rl.NewVector2(1500, 250), 13, 120, 80)
+	gem.Append(scn.GetRoot(), actor2)
 
-	//actor3 := entities.NewVfhActorEntity(baseStation, rl.NewVector2(1300, 620), 13, 120, 80)
-	//gem.Append(scn.GetRoot(), actor3)
+	actor3 := entities.NewVfhActorEntity(baseStation, rl.NewVector2(800, 520), 13, 120, 80)
+	gem.Append(scn.GetRoot(), actor3)
 
 	env := entities.NewEnvironmentEntity()
 	gem.Append(scn.GetRoot(), env)

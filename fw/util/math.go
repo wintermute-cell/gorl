@@ -23,16 +23,9 @@ func Vector2Clamp(input, min, max rl.Vector2) rl.Vector2 {
 
 // Vector2AngleSmallest returns the smallest angle between two vectors in radians.
 func Vector2AngleSmallest(v1, v2 rl.Vector2) float32 {
-	v1Len := rl.Vector2Length(v1)
-	v2Len := rl.Vector2Length(v2)
-	if v1Len == 0 || v2Len == 0 {
-		return 0
-	}
+	cross := rl.Vector2CrossProduct(v1, v2)
 	dot := rl.Vector2DotProduct(v1, v2)
-	cosOfAngle := dot / (v1Len * v2Len)
-	cosOfAngle = Clamp(cosOfAngle, -1, 1)
-	angleRad := float32(math.Acos(float64(cosOfAngle)))
-	return angleRad
+	return float32(math.Atan2(float64(cross), float64(dot)))
 }
 
 type number interface {
