@@ -57,6 +57,10 @@ func NewVfhActorEntity(
 		logging.Warning("Ray amount should be an odd number, so there is ray pointing straight forward! Adding 1 to the ray amount.")
 		rayAmount = rayAmount + 1
 	}
+	if rayAmount < 3 {
+		logging.Warning("Ray amount should be at least 3, setting it to 3.")
+		rayAmount = 3
+	}
 	new_ent := &VfhActorEntity{
 		sprite:        rl.LoadTexture("robot_small.png"),
 		Entity:        entities.NewEntity("VfhActorEntity", position, 0, rl.Vector2One()),
@@ -150,15 +154,22 @@ func (ent *VfhActorEntity) Update() {
 	ent.goalDirection = rl.Vector2Zero()
 	ent.goalPath = ent.baseStation.GetPath(ent.GetPosition(), ent.baseStation.GetPosition())
 	if len(ent.goalPath) >= 3 {
-		ent.goalDirection = rl.Vector2Subtract(ent.goalPath[1], ent.GetPosition())
+		ent.goalDirection = util.Vector2NormalizeSafe(rl.Vector2Subtract(ent.goalPath[1], ent.GetPosition()))
 		//rl.Vector2Normalize(rl.Vector2Subtract(ent.goalPath[2], ent.goalPath[0]))
 	}
 	ent.optimalDir = ent.VFHGoalOrientedCostFunction(ent.vfHistogram, ent.goalDirection)
-	angleToOptimal := rl.Vector2Angle(ent.forward, ent.optimalDir)
-	ent.SetRotation(ent.GetRotation() + angleToOptimal*rl.Rad2deg*0.8)
+	if rl.Vector2LengthSqr(ent.optimalDir) <= 0.000001 {
+		ent.SetRotation(ent.GetRotation() + 1)
+		// No direction to move towards, only rotate
+		return
+	}
+	//angleToOptimal := rl.Vector2Angle(ent.forward, ent.optimalDir)
+	angleToOptimal := util.Vector2AngleSmallest(ent.forward, ent.optimalDir)
+	logging.Debug("Angle to optimal: %v", angleToOptimal*rl.Rad2deg)
+	ent.SetRotation(ent.GetRotation() + angleToOptimal*rl.Rad2deg*(rl.GetFrameTime()*1))
 
 	// Move forward every frame
-	moveSpeed := float32(90)
+	moveSpeed := float32(20)
 	curPos := ent.GetPosition()
 	moveDelta := rl.Vector2Scale(ent.forward, moveSpeed*rl.GetFrameTime())
 	newPos := rl.Vector2Add(curPos, moveDelta)
@@ -209,7 +220,7 @@ func (ent *VfhActorEntity) Draw() {
 
 	// Draw the current path to the goal
 	for idx, pos := range ent.goalPath {
-		if idx == 0 {
+		if idx <= 0 { // we skip the first line segment
 			continue
 		}
 		rl.DrawLineV(ent.goalPath[idx-1], pos, rl.Green)
@@ -255,63 +266,85 @@ func (ent *VfhActorEntity) OnInputEvent(event *input.InputEvent) bool {
 
 // VFHGoalOrientedCostFunction selects the most optimal direction to move towards, given a
 // polar histogram of the environment. It uses direction centrality and alignment with the goal direction as weights.
+// Might return a zero vector if no direction is suitable.
 func (ent *VfhActorEntity) VFHGoalOrientedCostFunction(vfh []rl.Vector2, goalDirection rl.Vector2) rl.Vector2 {
 
 	vfh = ent.EnlargementFunction(vfh, 10)
 	ent.adjustedVFH = vfh
 
 	mid := len(vfh) / 2
-	selection := vfh[mid]
+	selection := rl.Vector2Zero()
 	selectionCost := float32(math.MaxFloat32)
 
 	// delta returns the absolute angle between two vectors
+	//delta := func(v1, v2 rl.Vector2) float32 {
+	//	angleRad := rl.Vector2Angle(v1, v2)
+	//	absRad := util.Abs(angleRad)
+	//	return absRad
+	//}
 	delta := func(v1, v2 rl.Vector2) float32 {
-		angleRad := rl.Vector2Angle(v1, v2)
-		absRad := util.Abs(angleRad)
-		return absRad
+		v := util.Vector2AngleSmallest(v1, v2)
+		return util.Abs(v)
 	}
+
+	ii := 0
+	oc := float32(0)
+	gal := float32(0)
+	gar := float32(0)
 
 	for i := mid; i >= 0; i-- {
 		leftIdx := mid - i
 		rightIdx := mid + i
 
-		centrality := delta(vfh[mid], vfh[leftIdx]) // centrality should be equal for both sides
+		offCentral := delta(vfh[mid], vfh[leftIdx]) // centrality should be equal for both sides
 
-		goalAlignmentLeft := delta(goalDirection, vfh[leftIdx])
-		goalAlignmentRight := delta(goalDirection, vfh[rightIdx])
-		logging.Debug("Goal alignment left: %v", goalAlignmentLeft)
-		logging.Debug("Goal alignment right: %v", goalAlignmentRight)
+		goalAngleLeft := delta(goalDirection, vfh[leftIdx])
+		goalAngleRight := delta(goalDirection, vfh[rightIdx])
 
 		left := vfh[leftIdx]
 		leftLen := rl.Vector2Length(left)
 		right := vfh[rightIdx]
 		rightLen := rl.Vector2Length(right)
 
-		centralityFactor := float32(1)
+		//centralityFactor := float32(1)
 		alignmentFactor := float32(1)
 
-		leftCost := centralityFactor*centrality + alignmentFactor*goalAlignmentLeft
-		rightCost := centralityFactor*centrality + alignmentFactor*goalAlignmentRight
+		leftCost := alignmentFactor * goalAngleLeft
+		rightCost := alignmentFactor * goalAngleRight
 
-		if leftLen >= rl.Vector2Length(selection)-0.0001 {
+		if leftLen >= 0.000001 {
 			if leftCost < selectionCost {
 				selection = left
 				selectionCost = leftCost
+				ii = -i
+				oc = offCentral
+				gal = goalAngleLeft
+				gar = goalAngleRight
 			}
 		}
-		if rightLen >= rl.Vector2Length(selection)-0.0001 {
+		if rightLen >= 0.000001 {
 			if rightCost < selectionCost {
 				selection = right
 				selectionCost = rightCost
+				ii = i
+				oc = offCentral
+				gal = goalAngleLeft
+				gar = goalAngleRight
 			}
 		}
 	}
+
+	logging.Debug("%v", ii)
+	logging.Debug("Off central: %v", oc)
+	logging.Debug("Goal alignment left: %v", gal)
+	logging.Debug("Goal alignment right: %v", gar)
 
 	return selection
 }
 
 // The EnlargementFunction filters the histogram according to the VFH+ paper.
 func (ent *VfhActorEntity) EnlargementFunction(vfh []rl.Vector2, robotRadius int32) []rl.Vector2 {
+
 	// 1. Gather all detected obstacle points
 	obstaclePoints := make([]rl.Vector2, 0)
 	for idx := range vfh {
@@ -323,22 +356,30 @@ func (ent *VfhActorEntity) EnlargementFunction(vfh []rl.Vector2, robotRadius int
 	// 2. Calculate an angular range `gamma` around each obstacle point
 	// Calculated as in the paper: http://www.cs.cmu.edu/~iwan/papers/vfh+.pdf (page 2)
 	gammas := make([]float32, 0)
-	clearance := float64(robotRadius) * 1.4 // This is the minimum clearance between the robot and the obstacle, d_s in the paper
+	clearance := float64(robotRadius) * 1.0 // This is the minimum clearance between the robot and the obstacle, d_s in the paper
 	for idx := range obstaclePoints {
-		gammaRad := math.Asin(float64(float64(robotRadius)+clearance) / float64(rl.Vector2Length(vfh[idx])))
+		gammaRad := math.Asin(
+			util.Clamp(float64(float64(robotRadius)+clearance)/float64(rl.Vector2Length(vfh[idx])), 0, 1),
+		)
 		gammas = append(gammas, float32(gammaRad))
+	}
+
+	for _, obs := range obstaclePoints {
+		rl.DrawCircleV(obs, float32(robotRadius+int32(clearance)), rl.Red)
 	}
 
 	// 3. Iterate over vfh and set vfh[i]=0 the angle between vfh[i] and any
 	// vector pointing to an obstacle point is \leq than the gamma of that
 	// obstacle point.
+vhfLoop:
 	for idx := range vfh {
 		for i := range obstaclePoints {
 			// Calculate the angle between the obstacle point and the vfh vector
 			obstacleDir := rl.Vector2Subtract(obstaclePoints[i], ent.GetPosition())
-			angleRad := util.Abs(rl.Vector2Angle(vfh[idx], obstacleDir))
+			angleRad := util.Abs(util.Vector2AngleSmallest(vfh[idx], obstacleDir))
 			if angleRad <= gammas[i] {
 				vfh[idx] = rl.Vector2Zero()
+				continue vhfLoop
 			} else {
 				// Here we just leave the vfh vector as it is.
 				// In the paper this is represented with a multiplication by 1.

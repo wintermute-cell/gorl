@@ -27,7 +27,7 @@ type VfhScene struct {
 func (scn *VfhScene) Init() {
 	// Initialization logic for the scene
 	// ...
-	cameraEntity := entities.NewCameraEntity(
+	cameraEntity := entities.NewCameraEntityEx(
 		rl.Vector2Zero(),
 		rl.Vector2Zero(),
 		rl.NewVector2(
@@ -46,7 +46,7 @@ func (scn *VfhScene) Init() {
 
 	baseStation := entities.NewBaseStationEntity(rl.NewVector2(430, 650))
 
-	actor := entities.NewVfhActorEntity(baseStation, rl.NewVector2(675, 840), 13, 120, 80)
+	actor := entities.NewVfhActorEntity(baseStation, rl.NewVector2(675, 840), 5, 120, 80)
 	gem.Append(scn.GetRoot(), actor)
 
 	//actor2 := entities.NewVfhActorEntity(baseStation, rl.NewVector2(1400, 820), 13, 120, 80)

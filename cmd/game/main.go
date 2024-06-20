@@ -119,11 +119,18 @@ func main() {
 	frameStart := time.Now()
 	var frameTime time.Duration = 0
 
+	testTex := rl.LoadRenderTexture(int32(settings.CurrentSettings().RenderWidth), int32(settings.CurrentSettings().RenderHeight))
+
 	for !shouldExit {
 		frameStart = time.Now()
 
+		rl.BeginTextureMode(testTex)
+		rl.ClearBackground(rl.Blank)
+
 		shouldFixedUpdate := physics.Update()
 		drawables, inputReceivers := gem.Traverse(shouldFixedUpdate)
+
+		rl.EndTextureMode()
 
 		//scenes.UpdateScenes() // TODO: rework scenes to be more clear
 		//scenes.FixedUpdateScenes()
@@ -131,6 +138,13 @@ func main() {
 		rl.BeginDrawing()
 
 		render.Draw(drawables)
+
+		rl.DrawTextureRec(
+			testTex.Texture,
+			rl.NewRectangle(0, 0, float32(testTex.Texture.Width), -float32(testTex.Texture.Height)),
+			rl.NewVector2(0, 0),
+			rl.White,
+		)
 
 		// input is processed at the end of the frame, because here we know in
 		// what order the entities were drawn, and can be sure whatever the

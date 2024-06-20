@@ -21,6 +21,20 @@ func Vector2Clamp(input, min, max rl.Vector2) rl.Vector2 {
 	return input
 }
 
+// Vector2AngleSmallest returns the smallest angle between two vectors in radians.
+func Vector2AngleSmallest(v1, v2 rl.Vector2) float32 {
+	v1Len := rl.Vector2Length(v1)
+	v2Len := rl.Vector2Length(v2)
+	if v1Len == 0 || v2Len == 0 {
+		return 0
+	}
+	dot := rl.Vector2DotProduct(v1, v2)
+	cosOfAngle := dot / (v1Len * v2Len)
+	cosOfAngle = Clamp(cosOfAngle, -1, 1)
+	angleRad := float32(math.Acos(float64(cosOfAngle)))
+	return angleRad
+}
+
 type number interface {
 	int | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | float32 | float64
 }
@@ -122,24 +136,6 @@ func ShortestLerp(current, target, factor float32) float32 {
 	}
 
 	return lerped
-}
-
-// Vector2Angle returns the angle of a vector in degrees.
-func Vector2Angle(v rl.Vector2) float32 {
-	const RadToDeg = 180.0 / math.Pi
-
-	// Get the angle in radians
-	radian := math.Atan2(float64(v.Y), float64(v.X))
-
-	// Convert the angle to degrees
-	degree := float32(radian) * RadToDeg
-
-	// Normalize the degree to be in [0, 360]
-	if degree < 0 {
-		degree += 360
-	}
-
-	return degree
 }
 
 // RotatePointAroundOrigin rotates a point around an origin by a given angle.

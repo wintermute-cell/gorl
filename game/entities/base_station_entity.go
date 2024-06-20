@@ -32,7 +32,7 @@ func NewBaseStationEntity(position rl.Vector2) *BaseStationEntity {
 	new_ent := &BaseStationEntity{
 		Entity: entities.NewEntity("BaseStationEntity", position, 0, rl.Vector2One()),
 
-		gridTileSize: 20,
+		gridTileSize: 10,
 	}
 
 	// initialize the quantized grid map with false values
