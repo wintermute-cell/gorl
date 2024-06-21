@@ -16,6 +16,8 @@ const (
 	ActionMouseHover
 	ActionEscape
 	// Add other actions as needed
+	ActionZoomIn
+	ActionZoomOut
 )
 
 var ActionMap = map[Action][]Trigger{
@@ -45,6 +47,13 @@ var ActionMap = map[Action][]Trigger{
 	},
 	ActionEscape: {
 		{InputType: InputTypeKey, TriggerType: TriggerTypeDown, Key: rl.KeyEscape},
+	},
+
+	ActionZoomIn: {
+		{InputType: InputTypeKey, TriggerType: TriggerTypeDown, Key: rl.KeyQ},
+	},
+	ActionZoomOut: {
+		{InputType: InputTypeKey, TriggerType: TriggerTypeDown, Key: rl.KeyE},
 	},
 	// Add other action-trigger mappings
 }
