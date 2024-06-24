@@ -40,9 +40,19 @@ func CreateBitFlag(flags ...int) BitFlag {
 	return result
 }
 
-// FromInt64 creates a BitFlag from an int64 value.
-func FromInt64(value int64) BitFlag {
+// BitflagFromInt64 creates a BitFlag from an int64 value.
+func BitflagFromInt64(value int64) BitFlag {
 	return BitFlag(value)
+}
+
+// BitflagNone creates a BitFlag with no bits set.
+func BitflagNone() BitFlag {
+	return 0
+}
+
+// BitflagAll creates a BitFlag with all bits set.
+func BitflagAll() BitFlag {
+	return ^BitFlag(0)
 }
 
 // ToInt64 converts the BitFlag to an int64 value.

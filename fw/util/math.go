@@ -22,7 +22,7 @@ func Vector2Clamp(input, min, max rl.Vector2) rl.Vector2 {
 }
 
 type number interface {
-	int | int16 | int32 | int64 | uint | uint16 | uint32 | uint64 | float32 | float64
+	int | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | float32 | float64
 }
 
 type signed_number interface {
@@ -42,11 +42,11 @@ func Sign[T signed_number](x T) T {
 
 // Abs returns the absolute value of x
 func Abs[T number](x T) T {
-    ret := x
-    if x < 0 {
-        ret = -x
-    }
-    return ret
+	ret := x
+	if x < 0 {
+		ret = -x
+	}
+	return ret
 }
 
 // Max will return the maximum value between x and y
@@ -124,22 +124,11 @@ func ShortestLerp(current, target, factor float32) float32 {
 	return lerped
 }
 
-// Vector2Angle returns the angle of a vector in degrees.
-func Vector2Angle(v rl.Vector2) float32 {
-	const RadToDeg = 180.0 / math.Pi
-
-	// Get the angle in radians
-	radian := math.Atan2(float64(v.Y), float64(v.X))
-
-	// Convert the angle to degrees
-	degree := float32(radian) * RadToDeg
-
-	// Normalize the degree to be in [0, 360]
-	if degree < 0 {
-		degree += 360
-	}
-
-	return degree
+// Vector2Angle returns the angle of a vector in radians.
+func Vector2Angle(v1, v2 rl.Vector2) float32 {
+	cross := rl.Vector2CrossProduct(v1, v2)
+	dot := rl.Vector2DotProduct(v1, v2)
+	return float32(math.Atan2(float64(cross), float64(dot)))
 }
 
 // RotatePointAroundOrigin rotates a point around an origin by a given angle.
@@ -195,7 +184,7 @@ func Vector2MoveTowards(current, target rl.Vector2, step float32) rl.Vector2 {
 	}
 
 	// Normalize the delta vector
-    dir := Vector2NormalizeSafe(delta)
+	dir := Vector2NormalizeSafe(delta)
 
 	// Move the vector by step towards target
 	moved := rl.Vector2Add(current, rl.Vector2Scale(dir, step))

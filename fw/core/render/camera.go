@@ -129,6 +129,11 @@ func (c *Camera) RemoveShader(shader *rl.Shader) {
 	}
 }
 
+// GetTexture returns the render texture of the camera.
+func (c *Camera) GetTexture() rl.RenderTexture2D {
+	return c.renderTarget.renderTexture
+}
+
 //
 //type cameraTransformationBuffer struct {
 //	Position       []rl.Vector2

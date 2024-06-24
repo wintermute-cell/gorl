@@ -14,6 +14,7 @@ import (
 	"gorl/game"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/go-gl/gl/v3.3-core/gl"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -54,6 +55,11 @@ func main() {
 		settings.CurrentSettings().Title)
 	defer rl.CloseWindow()
 	rl.SetTargetFPS(int32(settings.CurrentSettings().TargetFps))
+
+	// raw gl
+	if err := gl.Init(); err != nil {
+		logging.Fatal("Failed to initialize OpenGL:", err)
+	}
 
 	// rendering
 	render.Init(rl.NewVector2(
@@ -119,11 +125,18 @@ func main() {
 	frameStart := time.Now()
 	var frameTime time.Duration = 0
 
+	debugTex := rl.LoadRenderTexture(int32(settings.CurrentSettings().RenderWidth), int32(settings.CurrentSettings().RenderHeight))
+
 	for !shouldExit {
 		frameStart = time.Now()
 
+		rl.BeginTextureMode(debugTex)
+		rl.ClearBackground(rl.Blank)
+
 		shouldFixedUpdate := physics.Update()
 		drawables, inputReceivers := gem.Traverse(shouldFixedUpdate)
+
+		rl.EndTextureMode()
 
 		//scenes.UpdateScenes() // TODO: rework scenes to be more clear
 		//scenes.FixedUpdateScenes()
@@ -140,6 +153,13 @@ func main() {
 
 		// Draw Debug Info
 		DrawDebugInfo(frameTime)
+		rl.DrawTexturePro(
+			debugTex.Texture,
+			rl.NewRectangle(0, 0, float32(debugTex.Texture.Width), -float32(debugTex.Texture.Height)),
+			rl.NewRectangle(0, 0, float32(rl.GetScreenWidth()), float32(rl.GetScreenHeight())),
+			rl.Vector2Zero(),
+			0, rl.White,
+		)
 
 		rl.EndDrawing()
 

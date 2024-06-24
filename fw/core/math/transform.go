@@ -163,3 +163,23 @@ func (t *Transform2D) AddRotation(offset float32) {
 	t.rotation += offset
 	t.dirty = true
 }
+
+// Up returns the up vector of the Transform2D struct, respecting the Rotation.
+func (t *Transform2D) Up() rl.Vector2 {
+	return rl.Vector2Rotate(rl.NewVector2(0, -1), t.rotation*rl.Deg2rad)
+}
+
+// Right returns the right vector of the Transform2D struct, respecting the Rotation.
+func (t *Transform2D) Right() rl.Vector2 {
+	return rl.Vector2Rotate(rl.NewVector2(1, 0), t.rotation*rl.Deg2rad)
+}
+
+// Down returns the down vector of the Transform2D struct, respecting the Rotation.
+func (t *Transform2D) Down() rl.Vector2 {
+	return rl.Vector2Rotate(rl.NewVector2(0, 1), t.rotation*rl.Deg2rad)
+}
+
+// Left returns the left vector of the Transform2D struct, respecting the Rotation.
+func (t *Transform2D) Left() rl.Vector2 {
+	return rl.Vector2Rotate(rl.NewVector2(-1, 0), t.rotation*rl.Deg2rad)
+}

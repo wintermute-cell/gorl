@@ -24,6 +24,7 @@ pkgs.mkShell {
     xorg.libXinerama
     wayland
     libxkbcommon
+    pkg-config
   ];
 
   # this is needed for delve to work with cgo

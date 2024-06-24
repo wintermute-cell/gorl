@@ -7,6 +7,7 @@ import (
 	input "gorl/fw/core/input/input_event"
 	"gorl/fw/core/math"
 	"gorl/fw/core/render"
+	"gorl/fw/core/settings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -21,7 +22,7 @@ type CameraEntity struct {
 	ctb    *cameraTransformationBuffer
 }
 
-func NewCameraEntity(
+func NewCameraEntityEx(
 	camTarget, camOffset,
 	displaySize, displayPosition rl.Vector2,
 	drawFlags math.BitFlag,
@@ -40,6 +41,18 @@ func NewCameraEntity(
 	return new_ent
 }
 
+func NewCameraEntity(
+	camTarget rl.Vector2,
+	camOffset rl.Vector2,
+) *CameraEntity {
+	return NewCameraEntityEx(
+		camTarget, camOffset,
+		rl.NewVector2(float32(settings.CurrentSettings().RenderWidth), float32(settings.CurrentSettings().RenderHeight)),
+		rl.Vector2Zero(),
+		math.BitflagAll(),
+	)
+}
+
 // ============================================================================
 // Utilities
 // ============================================================================
@@ -52,6 +65,11 @@ func (ent *CameraEntity) ScreenToWorld(screenPos rl.Vector2) rl.Vector2 {
 // WorldToScreen converts a world position to a screen position.
 func (ent *CameraEntity) WorldToScreen(worldPos rl.Vector2) rl.Vector2 {
 	return ent.camera.WorldToScreen(worldPos)
+}
+
+// GetCamera returns a pointer to the underlying render camera of the entity.
+func (ent *CameraEntity) GetCamera() *render.Camera {
+	return ent.camera
 }
 
 // ============================================================================
