@@ -30,9 +30,13 @@ type Antbot struct {
 	rotVelocity float32
 	linVelocity float32
 
-	sensorPoints []rl.Vector2
-	sensorDist   float32
-	sensorRadius float32
+	botRadius float32
+
+	sensorPoints         []rl.Vector2
+	pheroSensorDist      float32
+	pheroSensorRadius    float32
+	obstacleSensorDist   float32
+	obstacleSensorRadius float32
 
 	obstacleMap *ObstacleMap
 	foodpiles   *FoodPiles
@@ -75,14 +79,18 @@ func NewAntbot(position rl.Vector2, rotation float32, obstacleMap *ObstacleMap, 
 		isTurning: false,
 		turnTimer: util.NewTimer(0.5),
 
+		botRadius: 4,
+
 		maxSpeed: 100,
 
 		rotVelocity: 0,
 		linVelocity: 0,
 
-		sensorPoints: sensorPoints,
-		sensorDist:   30,
-		sensorRadius: 20,
+		sensorPoints:         sensorPoints,
+		pheroSensorDist:      30,
+		pheroSensorRadius:    20,
+		obstacleSensorDist:   8,
+		obstacleSensorRadius: 4,
 
 		obstacleMap: obstacleMap,
 		foodpiles:   foodpiles,
@@ -139,7 +147,7 @@ func (bot *Antbot) Move() {
 		bot.rotVelocity += rot * trackStrength
 		bot.linVelocity += lin
 
-		if rl.CheckCollisionCircles(bot.Transform.GetPosition(), 5, bot.homeBasePoint, bot.homeBaseRadius) {
+		if rl.CheckCollisionCircles(bot.Transform.GetPosition(), bot.botRadius, bot.homeBasePoint, bot.homeBaseRadius) {
 			bot.isTurning = true
 			bot.turnDir = bot.Transform.Down()
 			bot.turnTimer.ResetTime()
@@ -212,7 +220,7 @@ func (bot *Antbot) steerTrackPheromone(pheromoneType PheromoneType) (float32, fl
 
 	found := false
 	for idx, sensor := range bot.sensorPoints {
-		rotPoint := rl.Vector2Rotate(rl.Vector2Scale(sensor, bot.sensorDist), bot.Transform.GetRotation()*rl.Deg2rad)
+		rotPoint := rl.Vector2Rotate(rl.Vector2Scale(sensor, bot.pheroSensorDist), bot.Transform.GetRotation()*rl.Deg2rad)
 		absPoint := rl.Vector2Add(
 			bot.Transform.GetPosition(),
 			rotPoint,
@@ -220,7 +228,7 @@ func (bot *Antbot) steerTrackPheromone(pheromoneType PheromoneType) (float32, fl
 
 		count, agedCount := bot.obstacleMap.HasInCircle(
 			math.Vector2IntFromRl(absPoint),
-			bot.sensorRadius,
+			bot.pheroSensorRadius,
 			pheromoneType,
 		)
 
@@ -268,7 +276,7 @@ func (bot *Antbot) steerWallAvoidance() (float32, float32) {
 	}
 	mustAvoid := float32(0)
 	for _, sensor := range bot.sensorPoints {
-		rotPoint := rl.Vector2Rotate(rl.Vector2Scale(sensor, bot.sensorDist), bot.Transform.GetRotation()*rl.Deg2rad)
+		rotPoint := rl.Vector2Rotate(rl.Vector2Scale(sensor, bot.obstacleSensorDist), bot.Transform.GetRotation()*rl.Deg2rad)
 		absPoint := rl.Vector2Add(
 			bot.Transform.GetPosition(),
 			rotPoint,
@@ -278,7 +286,7 @@ func (bot *Antbot) steerWallAvoidance() (float32, float32) {
 
 		hits, _ := bot.obstacleMap.HasInCircle(
 			math.Vector2IntFromRl(absPoint),
-			bot.sensorRadius,
+			bot.obstacleSensorRadius,
 			PheromoneEdgeObstacle,
 		)
 		if hits > 0 {
@@ -303,19 +311,9 @@ func (bot *Antbot) steerWallAvoidance() (float32, float32) {
 // detectAndTakeFood returns true if the bot has found food.
 // the food will be removed from the map.
 func (bot *Antbot) detectAndTakeFood() bool {
-	for _, sensor := range bot.sensorPoints {
-		rotPoint := rl.Vector2Rotate(rl.Vector2Scale(sensor, bot.sensorDist), bot.Transform.GetRotation()*rl.Deg2rad)
-		absPoint := rl.Vector2Add(
-			bot.Transform.GetPosition(),
-			rotPoint,
-		)
-		// Drawing the sensor points
-		//rl.DrawCircleV(absPoint, bot.sensorRadius, rl.Red)
-
-		hasFood := bot.foodpiles.CheckForFoodInCircle(absPoint, bot.sensorRadius)
-		if hasFood {
-			return true
-		}
+	hasFood := bot.foodpiles.CheckForFoodInCircle(bot.Transform.GetPosition(), bot.botRadius)
+	if hasFood {
+		return true
 	}
 	return false
 }

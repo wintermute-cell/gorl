@@ -24,11 +24,12 @@ type AntbotsEntity struct {
 	homeBaseRadius float32
 
 	// bots
-	botSprite   rl.Texture2D
-	bots        []*code.Antbot
-	obstacleMap *code.ObstacleMap
-	decayTimer  *util.Timer
-	mapTexture  rl.Texture2D
+	botSprite       rl.Texture2D
+	bots            []*code.Antbot
+	obstacleMap     *code.ObstacleMap
+	decayTimer      *util.Timer
+	pheromoneMapTex rl.Texture2D
+	obstacleMapTex  rl.Texture2D
 
 	pathTex rl.RenderTexture2D
 
@@ -52,7 +53,8 @@ func NewAntbotsEntity(botAmount int, spawnPoint rl.Vector2, spawnRadius float32,
 
 	mapSize := new_ent.obstacleMap.GetSize()
 	emptyImg := rl.GenImageColor(mapSize.X, mapSize.Y, rl.Blank)
-	new_ent.mapTexture = rl.LoadTextureFromImage(emptyImg)
+	new_ent.pheromoneMapTex = rl.LoadTextureFromImage(emptyImg)
+	new_ent.obstacleMapTex = rl.LoadTextureFromImage(emptyImg)
 	rl.UnloadImage(emptyImg)
 
 	for i := 0; i < botAmount; i++ {
@@ -88,10 +90,19 @@ func (ent *AntbotsEntity) Update() {
 
 func (ent *AntbotsEntity) Draw() {
 
-	ent.obstacleMap.ToRlTexture(ent.mapTexture)
+	ent.obstacleMap.ObstaclesToTexture(ent.obstacleMapTex)
 	rl.DrawTexturePro(
-		ent.mapTexture,
-		rl.NewRectangle(0, 0, float32(ent.mapTexture.Width), float32(ent.mapTexture.Height)),
+		ent.obstacleMapTex,
+		rl.NewRectangle(0, 0, float32(ent.obstacleMapTex.Width), float32(ent.obstacleMapTex.Height)),
+		rl.NewRectangle(0, 0, float32(settings.CurrentSettings().RenderWidth), float32(settings.CurrentSettings().RenderHeight)),
+		rl.NewVector2(0, 0),
+		0, rl.White,
+	)
+
+	ent.obstacleMap.PheromoneToTexture(ent.pheromoneMapTex)
+	rl.DrawTexturePro(
+		ent.pheromoneMapTex,
+		rl.NewRectangle(0, 0, float32(ent.pheromoneMapTex.Width), float32(ent.pheromoneMapTex.Height)),
 		rl.NewRectangle(0, 0, float32(settings.CurrentSettings().RenderWidth), float32(settings.CurrentSettings().RenderHeight)),
 		rl.NewVector2(0, 0),
 		0, rl.White,
@@ -122,17 +133,18 @@ func (ent *AntbotsEntity) Draw() {
 	for _, bot := range ent.bots {
 		// Draw the bot
 		sprtDims := rl.NewVector2(float32(ent.botSprite.Width), float32(ent.botSprite.Height))
+		tint := rl.Black
+		if bot.BotMode == code.BotModeReturning {
+			tint = rl.Lime
+		}
 		rl.DrawTexturePro(
 			ent.botSprite,
 			rl.NewRectangle(0, 0, sprtDims.X, sprtDims.Y),
 			rl.NewRectangle(bot.Transform.GetPosition().X, bot.Transform.GetPosition().Y, sprtDims.X, sprtDims.Y),
 			rl.NewVector2(sprtDims.X/2, sprtDims.Y/2),
 			bot.Transform.GetRotation(),
-			rl.White,
+			tint,
 		)
-		if bot.BotMode == code.BotModeReturning {
-			rl.DrawCircleV(bot.Transform.GetPosition(), 3, rl.Green)
-		}
 	}
 }
 
