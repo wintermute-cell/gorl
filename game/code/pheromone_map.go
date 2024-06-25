@@ -20,8 +20,8 @@ const (
 	PheromoneNoFood                            // Encodes the green channel in pheromone data (indicates no food left)
 )
 
-// ObstacleMap represents a map where each cell is a color.RGBA value.
-type ObstacleMap struct {
+// PheromoneMap represents a map where each cell is a color.RGBA value.
+type PheromoneMap struct {
 	pheromoneData []color.RGBA    // Array storing the pheromone data
 	obstacleData  []color.RGBA    // Array storing the obstacle data
 	width         int             // Width of the map
@@ -29,24 +29,24 @@ type ObstacleMap struct {
 	resolution    math.Vector2Int // Logical resolution of the map
 }
 
-// NewObstacleMap creates a new map with the specified size and resolution.
-func NewObstacleMap(size, resolution math.Vector2Int) *ObstacleMap {
+// NewPheromoneMap creates a new map with the specified size and resolution.
+func NewPheromoneMap(size, resolution math.Vector2Int) *PheromoneMap {
 	totalCells := size.X * size.Y
 	pheromoneData := make([]color.RGBA, totalCells)
 	obstacleData := make([]color.RGBA, totalCells)
 
 	// Initialize obstacles as an example
-	areaWidth, areaHeight := 100, 100
-	startX, startY := 10, 10
-	for x := startX; x < startX+areaWidth; x++ {
-		for y := startY; y < startY+areaHeight; y++ {
-			if x < size.X && y < size.Y {
-				obstacleData[y*size.X+x] = color.RGBA{0, 0, 0, 255} // Obstacle with zero alpha
-			}
-		}
-	}
+	//areaWidth, areaHeight := 100, 100
+	//startX, startY := 10, 10
+	//for x := startX; x < startX+areaWidth; x++ {
+	//	for y := startY; y < startY+areaHeight; y++ {
+	//		if x < size.X && y < size.Y {
+	//			obstacleData[y*size.X+x] = color.RGBA{0, 0, 0, 255} // Obstacle with zero alpha
+	//		}
+	//	}
+	//}
 
-	return &ObstacleMap{
+	return &PheromoneMap{
 		pheromoneData: pheromoneData,
 		obstacleData:  obstacleData,
 		width:         size.X,
@@ -56,12 +56,12 @@ func NewObstacleMap(size, resolution math.Vector2Int) *ObstacleMap {
 }
 
 // GetSize returns the width and height of the map.
-func (om *ObstacleMap) GetSize() math.Vector2Int {
+func (om *PheromoneMap) GetSize() math.Vector2Int {
 	return math.Vector2Int{X: om.width, Y: om.height}
 }
 
 // scalePosition converts from render resolution to the map's logical resolution.
-func (om *ObstacleMap) scalePosition(position math.Vector2Int) math.Vector2Int {
+func (om *PheromoneMap) scalePosition(position math.Vector2Int) math.Vector2Int {
 	return math.Vector2Int{
 		X: position.X * om.width / om.resolution.X,
 		Y: position.Y * om.height / om.resolution.Y,
@@ -69,7 +69,7 @@ func (om *ObstacleMap) scalePosition(position math.Vector2Int) math.Vector2Int {
 }
 
 // SetPheromone sets the pheromone level at a given position based on the specified pheromone type.
-func (om *ObstacleMap) SetPheromone(position math.Vector2Int, pheromoneType PheromoneType) {
+func (om *PheromoneMap) SetPheromone(position math.Vector2Int, pheromoneType PheromoneType, amount uint8) {
 	logicalPosition := om.scalePosition(position)
 	index := logicalPosition.Y*om.width + logicalPosition.X
 
@@ -86,21 +86,24 @@ func (om *ObstacleMap) SetPheromone(position math.Vector2Int, pheromoneType Pher
 	}
 
 	// Set the appropriate pheromone channel based on the type
-	const addAmount = 50
+	var addAmount = amount
 	switch pheromoneType {
 	case PheromoneLeaving:
 		om.pheromoneData[index] = color.RGBA{R: currPheromoneData.R, G: currPheromoneData.G, B: currPheromoneData.B + addAmount, A: 200}
+		om.pheromoneData[index].A = max(om.pheromoneData[index].R, om.pheromoneData[index].B, om.pheromoneData[index].G)
 	case PheromoneReturning:
 		om.pheromoneData[index] = color.RGBA{R: currPheromoneData.R + addAmount, G: currPheromoneData.G, B: currPheromoneData.B, A: 200}
+		om.pheromoneData[index].A = max(om.pheromoneData[index].R, om.pheromoneData[index].B, om.pheromoneData[index].G)
 	case PheromoneNoFood:
 		om.pheromoneData[index] = color.RGBA{R: currPheromoneData.R, G: currPheromoneData.G + addAmount, B: currPheromoneData.B, A: 200}
+		om.pheromoneData[index].A = max(om.pheromoneData[index].R, om.pheromoneData[index].B, om.pheromoneData[index].G)
 	default:
 		// Ignore setting if the type is PheromoneEdgeObstacle or any invalid type
 	}
 }
 
 // DecayPheromones decreases the pheromone levels over time by decrementing the color channels.
-func (om *ObstacleMap) DecayPheromones(decayRate uint8) {
+func (om *PheromoneMap) DecayPheromones(decayRate uint8) {
 	for i := range om.pheromoneData {
 		cell := &om.pheromoneData[i]
 		if om.obstacleData[i].A != 255 { // Skip obstacles
@@ -122,7 +125,7 @@ func (om *ObstacleMap) DecayPheromones(decayRate uint8) {
 
 // HasInCircle returns the number of cells with pheromone within a circle in the render resolution,
 // and calculates the aged count considering the intensity of the specified pheromone channel.
-func (om *ObstacleMap) HasInCircle(center math.Vector2Int, radius float32, pheromoneType PheromoneType) (count int32, agedCount float32) {
+func (om *PheromoneMap) HasInCircle(center math.Vector2Int, radius float32, pheromoneType PheromoneType) (count int32, agedCount float32) {
 	logicalCenter := om.scalePosition(center)
 	logicalRadius := radius * float32(om.width) / float32(om.resolution.X) // Assuming uniform scaling
 
@@ -173,14 +176,14 @@ func (om *ObstacleMap) HasInCircle(center math.Vector2Int, radius float32, phero
 }
 
 // PheromoneToTexture updates a texture with the map's data.
-func (om *ObstacleMap) PheromoneToTexture(tex rl.Texture2D) {
+func (om *PheromoneMap) PheromoneToTexture(tex rl.Texture2D) {
 	if tex.Width != int32(om.width) || tex.Height != int32(om.height) {
 		logging.Fatal("Texture size does not match map size, should be %dx%d", om.width, om.height)
 	}
 	rl.UpdateTexture(tex, om.pheromoneData)
 }
 
-func (om *ObstacleMap) ObstaclesToTexture(tex rl.Texture2D) {
+func (om *PheromoneMap) ObstaclesToTexture(tex rl.Texture2D) {
 	if tex.Width != int32(om.width) || tex.Height != int32(om.height) {
 		logging.Fatal("Texture size does not match map size, should be %dx%d", om.width, om.height)
 	}

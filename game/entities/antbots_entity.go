@@ -26,7 +26,7 @@ type AntbotsEntity struct {
 	// bots
 	botSprite       rl.Texture2D
 	bots            []*code.Antbot
-	obstacleMap     *code.ObstacleMap
+	obstacleMap     *code.PheromoneMap
 	decayTimer      *util.Timer
 	pheromoneMapTex rl.Texture2D
 	obstacleMapTex  rl.Texture2D
@@ -45,8 +45,8 @@ func NewAntbotsEntity(botAmount int, spawnPoint rl.Vector2, spawnRadius float32,
 
 		botSprite:   rl.LoadTexture("antbot.png"),
 		bots:        make([]*code.Antbot, botAmount),
-		obstacleMap: code.NewObstacleMap(math.NewVector2Int(1920/2, 1080/2), math.NewVector2Int(1920, 1080)),
-		decayTimer:  util.NewTimer(40.0 / 200.0), // 20 seconds to decay to 0
+		obstacleMap: code.NewPheromoneMap(math.NewVector2Int(1920/3, 1080/3), math.NewVector2Int(1920, 1080)),
+		decayTimer:  util.NewTimer(20.0 / 200.0), // 30 seconds to decay to 0
 		pathTex:     rl.LoadRenderTexture(1920, 1080),
 		cam:         cam,
 	}
@@ -59,8 +59,8 @@ func NewAntbotsEntity(botAmount int, spawnPoint rl.Vector2, spawnRadius float32,
 
 	for i := 0; i < botAmount; i++ {
 		randPoint := rl.NewVector2(
-			spawnPoint.X+((rand.Float32()-0.5)*2)*spawnRadius,
-			spawnPoint.Y+((rand.Float32()-0.5)*2)*spawnRadius,
+			spawnPoint.X+((rand.Float32()-0.5)*2)*5,
+			spawnPoint.Y+((rand.Float32()-0.5)*2)*5,
 		)
 		pointAngle := -util.Vector2Angle(rl.Vector2Subtract(randPoint, spawnPoint), rl.NewVector2(0, -1)) * rl.Rad2deg
 		new_ent.bots[i] = code.NewAntbot(randPoint, pointAngle, new_ent.obstacleMap, foodpiles.Foodpiles, spawnPoint, spawnRadius)
@@ -90,6 +90,7 @@ func (ent *AntbotsEntity) Update() {
 
 func (ent *AntbotsEntity) Draw() {
 
+	rl.ClearBackground(rl.Black)
 	ent.obstacleMap.ObstaclesToTexture(ent.obstacleMapTex)
 	rl.DrawTexturePro(
 		ent.obstacleMapTex,
@@ -109,16 +110,6 @@ func (ent *AntbotsEntity) Draw() {
 	)
 
 	rl.DrawCircleV(ent.homeBasePoint, ent.homeBaseRadius, rl.Fade(rl.Green, 0.7))
-	// draw new pixels to the path texture
-	//pt := ent.cam.GetCamera().GetTexture()
-	//rl.EndTextureMode()
-	//rl.BeginTextureMode(ent.pathTex)
-	//for _, bot := range ent.bots {
-	//	// Draw the bot's position
-	//	rl.DrawPixel(int32(bot.Transform.GetPosition().X), int32(bot.Transform.GetPosition().Y), rl.Fade(rl.Red, 0.9))
-	//}
-	//rl.EndTextureMode()
-	//rl.BeginTextureMode(pt)
 
 	// Draw the path to the screen
 	rl.DrawTexturePro(
@@ -133,15 +124,15 @@ func (ent *AntbotsEntity) Draw() {
 	for _, bot := range ent.bots {
 		// Draw the bot
 		sprtDims := rl.NewVector2(float32(ent.botSprite.Width), float32(ent.botSprite.Height))
-		tint := rl.Black
+		tint := rl.RayWhite
 		if bot.BotMode == code.BotModeReturning {
 			tint = rl.Lime
 		}
 		rl.DrawTexturePro(
 			ent.botSprite,
 			rl.NewRectangle(0, 0, sprtDims.X, sprtDims.Y),
-			rl.NewRectangle(bot.Transform.GetPosition().X, bot.Transform.GetPosition().Y, sprtDims.X, sprtDims.Y),
-			rl.NewVector2(sprtDims.X/2, sprtDims.Y/2),
+			rl.NewRectangle(bot.Transform.GetPosition().X, bot.Transform.GetPosition().Y, sprtDims.X/2, sprtDims.Y/2),
+			rl.NewVector2(sprtDims.X/4, sprtDims.Y/4),
 			bot.Transform.GetRotation(),
 			tint,
 		)

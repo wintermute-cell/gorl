@@ -3,7 +3,9 @@ package code
 import (
 	"gorl/fw/core/math"
 	"gorl/fw/util"
+	gomath "math"
 	"math/rand"
+	"time"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -23,10 +25,6 @@ type Antbot struct {
 
 	maxSpeed float32 // Maximum speed the bot can reach
 
-	isTurning bool
-	turnTimer *util.Timer
-	turnDir   rl.Vector2
-
 	rotVelocity float32
 	linVelocity float32
 
@@ -38,14 +36,18 @@ type Antbot struct {
 	obstacleSensorDist   float32
 	obstacleSensorRadius float32
 
-	obstacleMap *ObstacleMap
+	obstacleMap *PheromoneMap
 	foodpiles   *FoodPiles
 
 	homeBasePoint  rl.Vector2
 	homeBaseRadius float32
 
-	BotMode        mode
-	pheromoneTimer *util.Timer
+	BotMode            mode
+	pheromoneIntensity float32
+	strictness         float32
+	pheromoneTimer     *util.Timer
+	pheromoneRefreshed time.Time
+	pheromoneLifetime  time.Duration
 
 	// wander
 	wanderTheta float32
@@ -55,7 +57,7 @@ type Antbot struct {
 	avoidanceDir      rl.Vector2
 }
 
-func NewAntbot(position rl.Vector2, rotation float32, obstacleMap *ObstacleMap, foodpiles *FoodPiles, homeBasePoint rl.Vector2, homeBaseRadius float32) *Antbot {
+func NewAntbot(position rl.Vector2, rotation float32, obstacleMap *PheromoneMap, foodpiles *FoodPiles, homeBasePoint rl.Vector2, homeBaseRadius float32) *Antbot {
 	tf := math.NewTransform2D(position, rotation, rl.Vector2One())
 
 	sensorPoints := []rl.Vector2{}
@@ -70,18 +72,18 @@ func NewAntbot(position rl.Vector2, rotation float32, obstacleMap *ObstacleMap, 
 	return &Antbot{
 		Transform: &tf,
 
-		BotMode:        BotModeLeaving,
-		pheromoneTimer: util.NewTimer(0.05),
+		BotMode:            BotModeLeaving,
+		strictness:         2.9,
+		pheromoneIntensity: 1,
+		pheromoneTimer:     util.NewTimer(0.1),
+		pheromoneLifetime:  10 * time.Second,
 
 		homeBasePoint:  homeBasePoint,
 		homeBaseRadius: homeBaseRadius,
 
-		isTurning: false,
-		turnTimer: util.NewTimer(0.5),
+		botRadius: 3,
 
-		botRadius: 4,
-
-		maxSpeed: 100,
+		maxSpeed: 130,
 
 		rotVelocity: 0,
 		linVelocity: 0,
@@ -106,17 +108,26 @@ func (bot *Antbot) Move() {
 
 	switch bot.BotMode {
 	case BotModeLeaving:
+		// if we walk through the home base, we refresh our pheromone supply
+		if rl.CheckCollisionCircles(
+			bot.Transform.GetPosition(), bot.botRadius,
+			bot.homeBasePoint, bot.homeBaseRadius,
+		) {
+			bot.pheromoneRefreshed = time.Now()
+		}
+
 		if bot.pheromoneTimer.Check() {
+			toPlace := bot.getPheroIntensity(0.35)
 			bot.obstacleMap.SetPheromone(
 				math.Vector2IntFromRl(bot.Transform.GetPosition()),
 				PheromoneLeaving,
+				uint8(toPlace),
 			)
 		}
 		foundFood := bot.detectAndTakeFood()
 		if foundFood {
-			bot.isTurning = true
-			bot.turnDir = bot.Transform.Down()
-			bot.turnTimer.ResetTime()
+			bot.pheromoneRefreshed = time.Now()
+			bot.Transform.AddRotation(180)
 			bot.BotMode = BotModeReturning
 		}
 
@@ -125,16 +136,18 @@ func (bot *Antbot) Move() {
 		bot.rotVelocity += rot * wanderStrength
 		bot.linVelocity += lin * wanderStrength
 
-		trackStrength := float32(1.9)
+		trackStrength := wanderStrength * bot.strictness
 		rot, lin = bot.steerTrackPheromone(PheromoneReturning)
 		bot.rotVelocity += rot * trackStrength
 		bot.linVelocity += lin
 
 	case BotModeReturning:
 		if bot.pheromoneTimer.Check() {
+			toPlace := bot.getPheroIntensity(0.35)
 			bot.obstacleMap.SetPheromone(
 				math.Vector2IntFromRl(bot.Transform.GetPosition()),
 				PheromoneReturning,
+				uint8(toPlace),
 			)
 		}
 		wanderStrength := float32(2)
@@ -142,31 +155,25 @@ func (bot *Antbot) Move() {
 		bot.rotVelocity += rot * wanderStrength
 		bot.linVelocity += lin
 
-		trackStrength := float32(1.9)
+		trackStrength := wanderStrength * bot.strictness
 		rot, lin = bot.steerTrackPheromone(PheromoneLeaving)
 		bot.rotVelocity += rot * trackStrength
 		bot.linVelocity += lin
 
 		if rl.CheckCollisionCircles(bot.Transform.GetPosition(), bot.botRadius, bot.homeBasePoint, bot.homeBaseRadius) {
-			bot.isTurning = true
-			bot.turnDir = bot.Transform.Down()
-			bot.turnTimer.ResetTime()
+			bot.Transform.AddRotation(180)
 			bot.BotMode = BotModeLeaving
+			bot.pheromoneRefreshed = time.Now()
 		}
 
 	case BotModeNoFood:
 		//bot.botMode = modeLeaving
 	}
 
-	if bot.isTurning {
-		const turnStrength = 10
-		rot, lin = bot.steerTurn()
-		if bot.turnTimer.Check() {
-			bot.isTurning = false
-		}
-		bot.rotVelocity += rot * turnStrength
-		bot.linVelocity += 0
-	}
+	foodAndHomeStrength := float32(5)
+	rot, lin = bot.steerToFoodAndHome()
+	bot.rotVelocity += rot * foodAndHomeStrength
+	bot.linVelocity += lin
 
 	wallAvoidanceStrength := float32(20)
 	rot, lin = bot.steerWallAvoidance()
@@ -260,13 +267,42 @@ func (bot *Antbot) steerTrackPheromone(pheromoneType PheromoneType) (float32, fl
 	return rot, lin
 }
 
-func (bot *Antbot) steerTurn() (float32, float32) {
-	lin := float32(0)
-	rot := float32(0)
-	turnPoint := rl.Vector2Add(bot.Transform.GetPosition(), rl.Vector2Scale(bot.turnDir, 10))
-	rl.DrawCircleV(turnPoint, 5, rl.Red)
-	rot, lin = bot.steerSeek(turnPoint)
-	return rot, lin
+// steerToFoodAndHome implements short range steering to food and home points
+// within the bot's sensor range.
+func (bot *Antbot) steerToFoodAndHome() (float32, float32) {
+	rot, _ := float32(0), float32(0)
+	validDirections := []rl.Vector2{}
+	for _, sensor := range bot.sensorPoints {
+		rotPoint := rl.Vector2Rotate(rl.Vector2Scale(sensor, bot.obstacleSensorDist), bot.Transform.GetRotation()*rl.Deg2rad)
+		absPoint := rl.Vector2Add(
+			bot.Transform.GetPosition(),
+			rotPoint,
+		)
+		// Drawing the sensor points
+		//rl.DrawCircleV(absPoint, bot.sensorRadius, rl.Red)
+		hasFood := bot.foodpiles.CheckForFoodInCircle(
+			absPoint,
+			bot.obstacleSensorRadius,
+		)
+		isHome := rl.CheckCollisionCircles(
+			absPoint,
+			bot.obstacleSensorRadius,
+			bot.homeBasePoint,
+			bot.homeBaseRadius,
+		)
+		if hasFood || isHome {
+			validDirections = append(validDirections, absPoint)
+		}
+	}
+	targetAvg := rl.Vector2Zero()
+	for _, dir := range validDirections {
+		targetAvg = rl.Vector2Add(targetAvg, dir)
+	}
+	if len(validDirections) > 0 {
+		targetAvg = rl.Vector2Scale(targetAvg, 1/float32(len(validDirections)))
+		rot, _ = bot.steerSeek(targetAvg)
+	}
+	return rot, 0
 }
 
 func (bot *Antbot) steerWallAvoidance() (float32, float32) {
@@ -318,8 +354,8 @@ func (bot *Antbot) detectAndTakeFood() bool {
 	return false
 }
 
+// wrapPosition wraps the bot around the screen if it goes out of bounds.
 func (bot *Antbot) wrapPosition() {
-
 	if bot.Transform.GetPosition().X > float32(rl.GetScreenWidth()) {
 		bot.Transform.SetPosition(rl.NewVector2(0, bot.Transform.GetPosition().Y))
 	}
@@ -332,4 +368,11 @@ func (bot *Antbot) wrapPosition() {
 	if bot.Transform.GetPosition().Y < 0 {
 		bot.Transform.SetPosition(rl.NewVector2(bot.Transform.GetPosition().X, float32(rl.GetScreenHeight())))
 	}
+}
+
+func (bot *Antbot) getPheroIntensity(coef float32) uint8 {
+	timeSince := time.Since(bot.pheromoneRefreshed).Seconds()
+	intensity := bot.pheromoneIntensity * float32(gomath.Exp(-float64(coef)*timeSince)) * 255
+	intensity = util.Clamp(intensity, 0, 255)
+	return uint8(intensity)
 }

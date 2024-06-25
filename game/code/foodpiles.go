@@ -28,7 +28,7 @@ func NewFoodPiles() *FoodPiles {
 	}
 
 	// Add food points
-	amountFoodPerPile := 1000
+	amountFoodPerPile := 10000
 	for idx, point := range new_ent.FoodPilePoints {
 		new_ent.FoodPoints = append(new_ent.FoodPoints, []rl.Vector2{})
 		for i := 0; i < amountFoodPerPile; i++ {
