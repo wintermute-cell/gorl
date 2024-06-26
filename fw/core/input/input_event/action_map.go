@@ -11,6 +11,7 @@ const (
 	ActionMoveLeft
 	ActionMoveRight
 	ActionClickDown
+	ActionRightClickDown
 	ActionClickHeld
 	ActionClickUp
 	ActionMouseHover
@@ -35,6 +36,9 @@ var ActionMap = map[Action][]Trigger{
 	},
 	ActionClickDown: {
 		{InputType: InputTypeMouse, TriggerType: TriggerTypePressed, MouseButton: rl.MouseLeftButton},
+	},
+	ActionRightClickDown: {
+		{InputType: InputTypeMouse, TriggerType: TriggerTypePressed, MouseButton: rl.MouseRightButton},
 	},
 	ActionClickHeld: {
 		{InputType: InputTypeMouse, TriggerType: TriggerTypeDown, MouseButton: rl.MouseLeftButton},

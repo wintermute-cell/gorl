@@ -223,11 +223,13 @@ func (bot *Antbot) steerTrackPheromone(pheromoneType PheromoneType) (float32, fl
 
 	// a point in time that is guaranteed to be before any pheromone
 	concentrations := []float32{0, 0, 0}
-	points := []rl.Vector2{}
+	absPoints := []rl.Vector2{}
+	relPoints := []rl.Vector2{}
 
 	found := false
 	for idx, sensor := range bot.sensorPoints {
 		rotPoint := rl.Vector2Rotate(rl.Vector2Scale(sensor, bot.pheroSensorDist), bot.Transform.GetRotation()*rl.Deg2rad)
+		relPoints = append(relPoints, rotPoint)
 		absPoint := rl.Vector2Add(
 			bot.Transform.GetPosition(),
 			rotPoint,
@@ -245,7 +247,7 @@ func (bot *Antbot) steerTrackPheromone(pheromoneType PheromoneType) (float32, fl
 			found = true
 			concentrations[idx] = agedCount
 		}
-		points = append(points, absPoint)
+		absPoints = append(absPoints, absPoint)
 	}
 
 	// use the sensor with the freshest and most hits as the direction to follow
@@ -256,15 +258,31 @@ func (bot *Antbot) steerTrackPheromone(pheromoneType PheromoneType) (float32, fl
 	if found {
 		// if center > left and center > right
 		if concentrations[1] > concentrations[0] && concentrations[1] > concentrations[2] {
-			rot, lin = bot.steerSeek(points[1])
+			rot, lin = bot.steerSeek(absPoints[1])
 		} else if concentrations[0] > concentrations[2] {
 			// if left > right
-			rot, lin = bot.steerSeek(points[0])
+			rot, lin = bot.steerSeek(absPoints[0])
 		} else if concentrations[2] > concentrations[0] {
 			// if right > left
-			rot, lin = bot.steerSeek(points[2])
+			rot, lin = bot.steerSeek(absPoints[2])
 		}
 	}
+
+	// we add the directions together, scaling each one by the concentration.
+	// the sum is our direction. see the "VizSensors" scene for a visual representation.
+	//if found {
+	//	target := rl.Vector2Zero()
+	//	rot, lin = float32(0), float32(0)
+	//	for idx, point := range relPoints {
+	//		point = util.Vector2NormalizeSafe(point)
+	//		logging.Debug("%v", concentrations[idx])
+	//		c := util.Clamp(concentrations[idx]*100000, 0, 100)
+	//		target = rl.Vector2Add(target, rl.Vector2Scale(point, c))
+	//	}
+	//	absTarget := rl.Vector2Add(bot.Transform.GetPosition(), target)
+	//	rl.DrawCircleV(absTarget, 5, rl.Red)
+	//	rot, lin = bot.steerSeek(absTarget)
+	//}
 
 	return rot, lin
 }
