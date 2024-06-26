@@ -31,12 +31,6 @@ func NewFoodpilesEntity() *FoodpilesEntity {
 	return new_ent
 }
 
-// CheckForFoodInCircle checks if there is food within a circle.
-// If food is found, it returns true and removes the food point.
-func (ent *FoodpilesEntity) CheckForFoodInCircle(center rl.Vector2, radius float32) bool {
-	return ent.Foodpiles.CheckForFoodInCircle(center, radius)
-}
-
 func (ent *FoodpilesEntity) Init() {
 	// Initialization logic for the entity
 	// ...

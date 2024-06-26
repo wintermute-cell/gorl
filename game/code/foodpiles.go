@@ -22,13 +22,13 @@ func NewFoodPiles() *FoodPiles {
 		FoodPointRadius: 3,
 		FoodPileRadius:  20,
 		FoodPilePoints: []rl.Vector2{
-			rl.NewVector2(730, 840),
+			//rl.NewVector2(730, 840),
 			rl.NewVector2(1560, 440),
 		},
 	}
 
 	// Add food points
-	amountFoodPerPile := 10000
+	amountFoodPerPile := 100
 	for idx, point := range new_ent.FoodPilePoints {
 		new_ent.FoodPoints = append(new_ent.FoodPoints, []rl.Vector2{})
 		for i := 0; i < amountFoodPerPile; i++ {
@@ -44,8 +44,8 @@ func NewFoodPiles() *FoodPiles {
 }
 
 // CheckForFoodInCircle checks if there is food within a circle.
-// If food is found, it returns true and removes the food point.
-func (ent *FoodPiles) CheckForFoodInCircle(center rl.Vector2, radius float32) bool {
+// If food is found, it returns true and if take==true removes the food point.
+func (ent *FoodPiles) CheckForFoodInCircle(center rl.Vector2, radius float32, take bool) bool {
 	for pileIdx, pile := range ent.FoodPoints {
 		// we first check if the circle is colliding with the food pile
 		// as this is more performant than checking each food point.
@@ -55,7 +55,11 @@ func (ent *FoodPiles) CheckForFoodInCircle(center rl.Vector2, radius float32) bo
 					continue
 				}
 				if rl.CheckCollisionCircles(center, radius, point, ent.FoodPointRadius) {
-					ent.FoodPoints[pileIdx][pointIdx] = rl.NewVector2(-1, -1)
+					if take {
+						if rand.Float32() < 0.01 { // 1% chance to take the food
+							ent.FoodPoints[pileIdx][pointIdx] = rl.NewVector2(-1, -1)
+						}
+					}
 					return true
 				}
 			}

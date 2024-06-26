@@ -46,7 +46,7 @@ func NewAntbotsEntity(botAmount int, spawnPoint rl.Vector2, spawnRadius float32,
 		botSprite:   rl.LoadTexture("antbot.png"),
 		bots:        make([]*code.Antbot, botAmount),
 		obstacleMap: code.NewPheromoneMap(math.NewVector2Int(1920/3, 1080/3), math.NewVector2Int(1920, 1080)),
-		decayTimer:  util.NewTimer(20.0 / 200.0), // 30 seconds to decay to 0
+		decayTimer:  util.NewTimer(25.0 / 200.0), // 30 seconds to decay to 0
 		pathTex:     rl.LoadRenderTexture(1920, 1080),
 		cam:         cam,
 	}

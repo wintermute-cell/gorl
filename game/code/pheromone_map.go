@@ -6,6 +6,7 @@ import (
 	"gorl/fw/core/logging"
 	"gorl/fw/core/math"
 	"gorl/fw/util"
+	gomath "math"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -108,15 +109,15 @@ func (om *PheromoneMap) DecayPheromones(decayRate uint8) {
 		cell := &om.pheromoneData[i]
 		if om.obstacleData[i].A != 255 { // Skip obstacles
 			if cell.R > decayRate {
-				cell.R = util.Clamp(cell.R-decayRate, 1, 255)
+				cell.R = util.Clamp(cell.R-decayRate, 0, 255)
 				cell.A = max(cell.R, cell.B, cell.G)
 			}
 			if cell.G > decayRate {
-				cell.G = util.Clamp(cell.G-decayRate, 1, 255)
+				cell.G = util.Clamp(cell.G-decayRate, 0, 255)
 				cell.A = max(cell.R, cell.B, cell.G)
 			}
 			if cell.B > decayRate {
-				cell.B = util.Clamp(cell.B-decayRate, 1, 255)
+				cell.B = util.Clamp(cell.B-decayRate, 0, 255)
 				cell.A = max(cell.R, cell.B, cell.G)
 			}
 		}
@@ -163,7 +164,7 @@ func (om *PheromoneMap) HasInCircle(center math.Vector2Int, radius float32, pher
 					if pheromoneLevel > 0 {
 						count++
 						agedLevel := float32(pheromoneLevel) / 255.0
-						agedCount += agedLevel * agedLevel // squaring has the effect of emphasizing fresher pheromones
+						agedCount += float32(gomath.Pow(float64(agedLevel), 3)) // squaring has the effect of emphasizing fresher pheromones
 					}
 				} else if pheromoneType == PheromoneEdgeObstacle {
 					count++ // Count out-of-bounds cells as pheromones
