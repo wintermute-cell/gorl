@@ -29,7 +29,7 @@ var createCmd = &cobra.Command{
 		} else if cmd.Flags().Changed("scene") {
 			processTemplate(someName, sceneTemplateFile, scenesOutputDir)
 		} else {
-			fmt.Println("Please specify either --entity, --entity2d, or --scene")
+			fmt.Println("Please specify either --entity or --scene")
 			os.Exit(1)
 		}
 	},
