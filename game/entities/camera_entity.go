@@ -8,6 +8,7 @@ import (
 	"gorl/fw/core/math"
 	"gorl/fw/core/render"
 	"gorl/fw/core/settings"
+	"gorl/fw/util"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -18,8 +19,10 @@ var _ entities.IEntity = &CameraEntity{}
 // Camera Entity
 type CameraEntity struct {
 	*entities.Entity
-	camera *render.Camera
-	ctb    *cameraTransformationBuffer
+	offset      rl.Vector2 // Offset from the target position, not part of the typical Transform2D.
+	camera      *render.Camera
+	ctb         *cameraTransformationBuffer
+	shakeTrauma float32
 }
 
 func NewCameraEntityEx(
@@ -29,6 +32,7 @@ func NewCameraEntityEx(
 ) *CameraEntity {
 	new_ent := &CameraEntity{
 		Entity: entities.NewEntity("CameraEntity", camTarget, 0, rl.Vector2One()),
+		offset: camOffset,
 		camera: render.NewCamera(
 			camTarget,
 			camOffset,
@@ -82,16 +86,32 @@ func (ent *CameraEntity) Deinit() {
 
 func (ent *CameraEntity) Update() {
 
-	// 1. Apply the absolute transform of the camera entity to the render camera.
+	// 0. Reset the camera transformation buffer and the render camera.
+	ent.ctb.reset()
+	resetCamera(ent.camera)
+
+	// 1. Update the camera shake effect and apply it to the transformation buffer.
+	var decay float32 = 1.0
+	ent.shakeTrauma = util.Clamp(ent.shakeTrauma-rl.GetFrameTime()*decay, 0, 1)
+	shake := math.Pow(ent.shakeTrauma, 2)
+	const maxShakeAngleRad = 0.1
+	const maxShakeOffset = 10
+
+	rotShake := maxShakeAngleRad * shake * math.RandRange(-1, 1)
+	xShake := maxShakeOffset * shake * math.RandRange(-1, 1)
+	yShake := maxShakeOffset * shake * math.RandRange(-1, 1)
+
+	ent.ctb.RotationChange = append(ent.ctb.RotationChange, rotShake)
+	ent.ctb.OffsetChange = append(ent.ctb.OffsetChange, rl.NewVector2(xShake, yShake))
+
+	// 2. Apply the absolute transform of the camera entity to the render camera.
 	absTransform := gem.GetAbsoluteTransform(ent)
-	//ent.camera.SetTarget(absTransform.GetPosition())
-	//ent.camera.SetRotation(absTransform.GetRotation())
-	//ent.camera.SetZoom(absTransform.GetScale().X)
 	ent.ctb.Position = datastructures.NewMaybe(absTransform.GetPosition())
+	ent.ctb.Offset = datastructures.NewMaybe(ent.offset)
 	ent.ctb.Rotation = datastructures.NewMaybe(absTransform.GetRotation())
 	ent.ctb.Zoom = datastructures.NewMaybe(absTransform.GetScale().X)
 
-	// 2. Apply the cameraTransformationBuffer on top of that.
+	// 3. Apply the cameraTransformationBuffer on top of that.
 	ent.ctb.flushToCamera(ent.camera)
 
 }
@@ -105,7 +125,6 @@ func (ent *CameraEntity) OnInputEvent(event *input.InputEvent) bool {
 	// Logic to run when an input event is received.
 	// Return false if the event was consumed and should not be propagated
 	// further.
-	// ...
 
 	const moveSpeed = 100
 	const zoomSpeed = 0.3
@@ -128,8 +147,20 @@ func (ent *CameraEntity) OnInputEvent(event *input.InputEvent) bool {
 	if event.Action == input.ActionZoomOut {
 		ent.SetScale(rl.NewVector2(ent.GetScale().X-zoomSpeed*rl.GetFrameTime(), 1))
 	}
+	if event.Action == input.ActionClickDown {
+		ent.shakeTrauma = math.Clamp(ent.shakeTrauma+0.3, 0, 1)
+	}
 
 	return true
+}
+
+// resetCamera resets the render cameras target, offset, rotation, and zoom to
+// default values in preparation for the next frame.
+func resetCamera(camera *render.Camera) {
+	camera.SetTarget(rl.Vector2Zero())
+	camera.SetOffset(rl.Vector2Zero())
+	camera.SetRotation(0)
+	camera.SetZoom(1)
 }
 
 // ============================================================================
