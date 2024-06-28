@@ -119,11 +119,6 @@ func main() {
 	//rl.SetExitKey(rl.KeyEnd) // Set a key to exit the game
 	shouldExit := false
 
-	gopher, err := assets.LoadTexture("pics/gopher.png")
-	if err != nil {
-		panic(err)
-	}
-
 	// frame time measurement stuff
 	frameStart := time.Now()
 	var frameTime time.Duration = 0
@@ -146,8 +141,6 @@ func main() {
 		// user clicked was really visible at the front.
 		//inputEventReceivers := append(inputReceivers, drawableInputReceivers...)
 		input.HandleInputEvents(inputReceivers)
-
-		rl.DrawTexture(gopher, 0, 0, rl.White)
 
 		// Draw Debug Info
 		DrawDebugInfo(frameTime)

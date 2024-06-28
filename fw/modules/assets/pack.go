@@ -56,7 +56,8 @@ func LoadPackfile() (Packfile, error) {
 func (pf Packfile) GetAssetBytes(path string) ([]byte, error) {
 	data, ok := pf[path]
 	if !ok {
-		return nil, errors.New("asset not found")
+		msg := "asset not found in packfile: " + path
+		return nil, errors.New(msg)
 	}
 
 	return data, nil
