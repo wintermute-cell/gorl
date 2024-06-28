@@ -133,9 +133,6 @@ func main() {
 		shouldFixedUpdate := physics.Update()
 		drawables, inputReceivers := gem.Traverse(shouldFixedUpdate)
 
-		//scenes.UpdateScenes() // TODO: rework scenes to be more clear
-		//scenes.FixedUpdateScenes()
-
 		rl.BeginDrawing()
 
 		render.Draw(drawables)
@@ -143,7 +140,6 @@ func main() {
 		// input is processed at the end of the frame, because here we know in
 		// what order the entities were drawn, and can be sure whatever the
 		// user clicked was really visible at the front.
-		//inputEventReceivers := append(inputReceivers, drawableInputReceivers...)
 		input.HandleInputEvents(inputReceivers)
 
 		// Draw Debug Info

@@ -55,7 +55,7 @@ func (a *Animation[T]) AddKeyframe(variable *T, time float32, value T) {
 	})
 }
 
-// Play the animation, optionally with a random time offset (uselful for
+// Play the animation, optionally with a random time offset (useful for
 // multiple entities with the same animation)
 func (a *Animation[T]) Play(loop bool, random_time_offset bool) {
 	a.isLooping = loop
@@ -113,7 +113,7 @@ func (a *Animation[T]) GetLength() float32 {
 	return a.duration
 }
 
-// Update the animation, should be called every frame
+// Update the animation, must be called every frame for the animation to work.
 func (a *Animation[T]) Update() {
 	if !a.isPlaying {
 		return
