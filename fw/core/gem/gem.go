@@ -87,11 +87,13 @@ func Remove(entity entities.IEntity) {
 	}
 
 	// remove the node from the parent's children
-	parent := node.parent
-	for i, child := range parent.children {
-		if child == node {
-			parent.children = append(parent.children[:i], parent.children[i+1:]...)
-			break
+	if node != gemInstance.root {
+		parent := node.parent
+		for i, child := range parent.children {
+			if child == node {
+				parent.children = append(parent.children[:i], parent.children[i+1:]...)
+				break
+			}
 		}
 	}
 
