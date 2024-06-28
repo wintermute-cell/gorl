@@ -1,10 +1,10 @@
 package audio
 
 import (
+	"gorl/fw/core/assets"
 	"gorl/fw/core/logging"
 	"gorl/fw/util"
 	"math/rand"
-	"time"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -150,7 +150,6 @@ func getNextMusicTrack() string {
 
 	// select random name from a.curr_playlist
 	if p, ok := a.music_playlists[a.curr_playlist]; ok {
-		rand.Seed(time.Now().Unix()) // initialize global pseudo random generator
 		m := p[rand.Intn(len(p))]
 		if m == a.curr_playing_music_name {
 			// try once more to somewhat avoid playing the same track
@@ -186,9 +185,9 @@ func RegisterMusic(name, path string) {
 		logging.Warning("Tried to register music track for a name that already exists: %v", name)
 		return
 	}
-	m := rl.LoadMusicStream(path)
-	if m.Stream == (rl.AudioStream{}) {
-		logging.Error("Failed to load music audio stream for name: \"%v\" and path: %v", name, path)
+	m, err := assets.LoadMusicStream(path)
+	if err != nil {
+		logging.Error("Failed to load music audio stream: %v", err)
 	}
 	m.Looping = false // disable looping by default, this causes issues with fading tracks and looping is done by our player anyway.
 	a.music_tracks[name] = m
@@ -200,9 +199,9 @@ func RegisterSound(name, path string) {
 		logging.Warning("Tried to register sfx track for a name that already exists: %v", name)
 		return
 	}
-	s := rl.LoadSound(path)
-	if s.Stream == (rl.AudioStream{}) {
-		logging.Error("Failed to load sound audio stream for name: \"%v\" and path: %v", name, path)
+	s, err := assets.LoadSound(path)
+	if err != nil {
+		logging.Error("Failed to load sound audio stream: %v", err)
 	}
 	a.sfx_tracks[name] = s
 }
