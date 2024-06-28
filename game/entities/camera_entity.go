@@ -7,6 +7,7 @@ import (
 	input "gorl/fw/core/input/input_event"
 	"gorl/fw/core/math"
 	"gorl/fw/core/render"
+	"gorl/fw/core/settings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -21,7 +22,7 @@ type CameraEntity struct {
 	ctb    *cameraTransformationBuffer
 }
 
-func NewCameraEntity(
+func NewCameraEntityEx(
 	camTarget, camOffset,
 	displaySize, displayPosition rl.Vector2,
 	drawFlags math.BitFlag,
@@ -38,6 +39,17 @@ func NewCameraEntity(
 		ctb: &cameraTransformationBuffer{},
 	}
 	return new_ent
+}
+
+// NewCameraEntity creates a new CameraEntity with default values.
+func NewCameraEntity() *CameraEntity {
+	return NewCameraEntityEx(
+		rl.Vector2Zero(),
+		rl.Vector2Zero(),
+		rl.NewVector2(float32(settings.CurrentSettings().RenderWidth), float32(settings.CurrentSettings().RenderHeight)),
+		rl.Vector2Zero(),
+		math.Flag0,
+	)
 }
 
 // ============================================================================
@@ -96,7 +108,7 @@ func (ent *CameraEntity) OnInputEvent(event *input.InputEvent) bool {
 	// ...
 
 	const moveSpeed = 100
-	const zoomSpeed = 0.1
+	const zoomSpeed = 0.3
 
 	if event.Action == input.ActionMoveLeft {
 		ent.SetPosition(rl.Vector2Add(ent.GetPosition(), rl.NewVector2(-moveSpeed*rl.GetFrameTime(), 0)))
