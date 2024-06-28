@@ -6,6 +6,7 @@ import (
 	"gorl/fw/core/logging"
 	"io"
 	"os"
+	"path/filepath"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -64,4 +65,42 @@ func LoadTexture(path string) (rl.Texture2D, error) {
 		return rl.Texture2D{}, errors.New("failed to load texture")
 	}
 	return tex, nil
+}
+
+// LoadSound loads a Sound.
+func LoadSound(path string) (rl.Sound, error) {
+	if usingPackfile {
+		data, err := packfile.GetAssetBytes(path)
+		if err != nil {
+			return rl.Sound{}, err
+		}
+		ext := filepath.Ext(path)
+		wave := rl.LoadWaveFromMemory(ext, data, int32(len(data)))
+		if wave == (rl.Wave{}) {
+			return rl.Sound{}, errors.New("failed to load wave")
+		}
+		sound := rl.LoadSoundFromWave(wave)
+		if sound.Stream == (rl.AudioStream{}) {
+			return rl.Sound{}, errors.New("failed to load sound")
+		}
+		return sound, nil
+	}
+	return rl.LoadSound(path), nil
+}
+
+// LoadMusicStream loads a MusicStream.
+func LoadMusicStream(path string) (rl.Music, error) {
+	if usingPackfile {
+		data, err := packfile.GetAssetBytes(path)
+		if err != nil {
+			return rl.Music{}, err
+		}
+		ext := filepath.Ext(path)
+		stream := rl.LoadMusicStreamFromMemory(ext, data, int32(len(data)))
+		if stream == (rl.Music{}) {
+			return rl.Music{}, errors.New("failed to load music stream")
+		}
+		return stream, nil
+	}
+	return rl.LoadMusicStream(path), nil
 }

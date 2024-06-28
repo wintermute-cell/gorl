@@ -2,7 +2,7 @@ package settings
 
 import (
 	"encoding/json"
-	"gorl/fw/modules/assets"
+	"gorl/fw/core/assets"
 )
 
 type GameSettings struct {

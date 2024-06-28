@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"time"
 
+	"gorl/fw/core/assets"
 	"gorl/fw/core/gem"
 	input "gorl/fw/core/input/input_handling"
 	"gorl/fw/core/logging"
 	"gorl/fw/core/render"
 	"gorl/fw/core/settings"
 	"gorl/fw/core/store"
-	"gorl/fw/modules/assets"
+	"gorl/fw/modules/audio"
 	"gorl/fw/physics"
 	"gorl/game"
 
@@ -68,8 +69,8 @@ func main() {
 	logging.Info("Rendering initialized.")
 
 	// initialize audio
-	//audio.InitAudio()
-	//defer audio.DeinitAudio()
+	audio.InitAudio()
+	defer audio.DeinitAudio()
 
 	// collision
 	//collision.InitCollision()
@@ -123,6 +124,9 @@ func main() {
 	frameStart := time.Now()
 	var frameTime time.Duration = 0
 
+	// ==============================
+	// MAIN LOOP
+	// ==============================
 	for !shouldExit {
 		frameStart = time.Now()
 
@@ -147,7 +151,7 @@ func main() {
 
 		rl.EndDrawing()
 
-		//audio.Update()
+		audio.Update()
 		frameTime = time.Since(frameStart) // calculate after rl.EndDrawing() to include rendering time
 
 		appState, ok := store.Get[*store.AppState]()
