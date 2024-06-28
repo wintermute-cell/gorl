@@ -15,7 +15,8 @@ import (
 type PheromoneType uint8
 
 const (
-	PheromoneEdgeObstacle PheromoneType = iota // Encodes the alpha channel in obstacle data
+	PheromoneInvalid      PheromoneType = iota // Zero pheromone type
+	PheromoneEdgeObstacle                      // Encodes the alpha channel in obstacle data
 	PheromoneLeaving                           // Encodes the blue channel in pheromone data (seeking food)
 	PheromoneReturning                         // Encodes the red channel in pheromone data (returning home)
 	PheromoneNoFood                            // Encodes the green channel in pheromone data (indicates no food left)
@@ -37,15 +38,17 @@ func NewPheromoneMap(size, resolution math.Vector2Int) *PheromoneMap {
 	obstacleData := make([]color.RGBA, totalCells)
 
 	// Initialize obstacles as an example
-	//areaWidth, areaHeight := 100, 100
-	//startX, startY := 10, 10
-	//for x := startX; x < startX+areaWidth; x++ {
-	//	for y := startY; y < startY+areaHeight; y++ {
-	//		if x < size.X && y < size.Y {
-	//			obstacleData[y*size.X+x] = color.RGBA{0, 0, 0, 255} // Obstacle with zero alpha
-	//		}
-	//	}
-	//}
+	areaWidth, areaHeight := 100, 750
+	startX, startY := 800, 0
+	for x := startX; x < startX+areaWidth; x++ {
+		for y := startY; y < startY+areaHeight; y++ {
+			scaledX := x * size.X / resolution.X
+			scaledY := y * size.Y / resolution.Y
+			if scaledX >= 0 && scaledX < size.X && scaledY >= 0 && scaledY < size.Y {
+				obstacleData[scaledY*size.X+scaledX] = color.RGBA{R: 255, G: 255, B: 255, A: 255}
+			}
+		}
+	}
 
 	return &PheromoneMap{
 		pheromoneData: pheromoneData,

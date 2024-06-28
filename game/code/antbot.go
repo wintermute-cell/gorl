@@ -73,7 +73,7 @@ func NewAntbot(position rl.Vector2, rotation float32, obstacleMap *PheromoneMap,
 		Transform: &tf,
 
 		BotMode:            BotModeLeaving,
-		strictness:         3.7,
+		strictness:         4.7,
 		pheromoneIntensity: 1,
 		pheromoneTimer:     util.NewTimer(0.1),
 		pheromoneLifetime:  10 * time.Second,
@@ -131,7 +131,7 @@ func (bot *Antbot) Move() {
 			bot.BotMode = BotModeReturning
 		}
 
-		wanderStrength := float32(1)
+		wanderStrength := float32(2.0)
 		rot, lin = bot.steerWander()
 		bot.rotVelocity += rot * wanderStrength
 		bot.linVelocity += lin * wanderStrength
@@ -150,7 +150,7 @@ func (bot *Antbot) Move() {
 				uint8(toPlace),
 			)
 		}
-		wanderStrength := float32(1)
+		wanderStrength := float32(2.0)
 		rot, lin = bot.steerWander()
 		bot.rotVelocity += rot * wanderStrength
 		bot.linVelocity += lin
