@@ -2,7 +2,7 @@ package settings
 
 import (
 	"encoding/json"
-	"os"
+	"gorl/fw/modules/assets"
 )
 
 type GameSettings struct {
@@ -55,7 +55,7 @@ func UseFallbackSettings() {
 }
 
 func LoadSettings(path string) error {
-	file, err := os.Open(path)
+	file, err := assets.LoadFile(path)
 	if err != nil {
 		return err
 	}

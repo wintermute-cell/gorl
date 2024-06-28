@@ -2,6 +2,7 @@
 
 PROJECT="game-gorl"
 BUILD_PATH="./build"
+USE_PACKFILE=1
 
 init:
 	mkdir build
@@ -9,7 +10,11 @@ init:
 
 build:
 	mkdir -p $(BUILD_PATH)
-	cp -r assets/* $(BUILD_PATH)
+	if [ $(USE_PACKFILE) -eq 1 ]; then \
+		go run cmd/tool/main.go packer ./assets $(BUILD_PATH)/data.pack; \
+	else \
+		cp -r assets/* $(BUILD_PATH); \
+	fi
 	go build -o $(BUILD_PATH)/$(PROJECT) -v cmd/game/main.go
 
 build-debug:
@@ -21,12 +26,10 @@ run:
 	cd $(BUILD_PATH); ./$(PROJECT)
 
 dev:
-	@make build && make run || echo "build failed!"
+	@make clean && make build && make run || echo "failure!"
 
 clean:
 	rm -r $(BUILD_PATH)/*
-	mkdir -p $(BUILD_PATH)
-	cp -r assets/* $(BUILD_PATH)
 
 lint:
 	nilaway main.go
