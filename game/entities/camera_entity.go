@@ -9,6 +9,7 @@ import (
 	"gorl/fw/core/render"
 	"gorl/fw/core/settings"
 	"gorl/fw/util"
+	gomath "math"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -19,16 +20,21 @@ var _ entities.IEntity = &CameraEntity{}
 // Camera Entity
 type CameraEntity struct {
 	*entities.Entity
-	offset      rl.Vector2 // Offset from the target position, not part of the typical Transform2D.
-	camera      *render.Camera
-	ctb         *cameraTransformationBuffer
-	shakeTrauma float32
+	offset               rl.Vector2 // Offset from the target position, not part of the typical Transform2D.
+	camera               *render.Camera
+	ctb                  *cameraTransformationBuffer
+	shakeTrauma          float32
+	isPixelSmoothed      bool
+	subpixelOffset       rl.Vector2
+	pixelSmoothingShader rl.Shader
+	shaderUniformOffset  int32
 }
 
 func NewCameraEntityEx(
 	camTarget, camOffset,
 	renderSize, displaySize, displayPosition rl.Vector2,
 	drawFlags math.BitFlag,
+	pixelSmoothing bool,
 ) *CameraEntity {
 	new_ent := &CameraEntity{
 		Entity: entities.NewEntity("CameraEntity", camTarget, 0, rl.Vector2One()),
@@ -43,6 +49,17 @@ func NewCameraEntityEx(
 		),
 		ctb: &cameraTransformationBuffer{},
 	}
+	if pixelSmoothing {
+		new_ent.isPixelSmoothed = pixelSmoothing
+		new_ent.pixelSmoothingShader = rl.LoadShaderFromMemory(
+			pixelSmoothingShader, "",
+		)
+		new_ent.shaderUniformOffset = rl.GetShaderLocation(
+			new_ent.pixelSmoothingShader, "subpixelOffset",
+		)
+		new_ent.camera.SetFinalShader(&new_ent.pixelSmoothingShader)
+		new_ent.camera.SetRenderMargin(1)
+	}
 	return new_ent
 }
 
@@ -55,6 +72,7 @@ func NewCameraEntity() *CameraEntity {
 		rl.NewVector2(float32(settings.CurrentSettings().ScreenWidth), float32(settings.CurrentSettings().ScreenHeight)),
 		rl.Vector2Zero(),
 		math.Flag0,
+		false,
 	)
 }
 
@@ -84,6 +102,7 @@ func (ent *CameraEntity) Init() {
 func (ent *CameraEntity) Deinit() {
 	// De-initialization logic for the entity
 	// ...
+	ent.camera.Destroy()
 }
 
 func (ent *CameraEntity) Update() {
@@ -106,14 +125,31 @@ func (ent *CameraEntity) Update() {
 	ent.ctb.RotationChange = append(ent.ctb.RotationChange, rotShake)
 	ent.ctb.OffsetChange = append(ent.ctb.OffsetChange, rl.NewVector2(xShake, yShake))
 
-	// 2. Apply the absolute transform of the camera entity to the render camera.
+	// 2. Split the offset into integer and fractional parts.
+	// And apply the fractional part to the pixel smoothing shader.
+	pos := ent.GetPosition()
+	var posX, posY float64 = float64(pos.X), float64(pos.Y)
+	if ent.isPixelSmoothed {
+		var subpixelXFrac, subpixelYFrac float64
+		posX, subpixelXFrac = gomath.Modf(float64(pos.X))
+		posY, subpixelYFrac = gomath.Modf(float64(pos.Y))
+		ent.subpixelOffset = rl.Vector2Divide(rl.NewVector2(float32(subpixelXFrac), float32(subpixelYFrac)), settings.CurrentSettings().RenderSizeV())
+		rl.SetShaderValue(
+			ent.pixelSmoothingShader,
+			ent.shaderUniformOffset,
+			[]float32{ent.subpixelOffset.X, ent.subpixelOffset.Y},
+			rl.ShaderUniformVec2,
+		)
+	}
+
+	// 3. Apply the absolute transform of the camera entity to the render camera.
 	absTransform := gem.GetAbsoluteTransform(ent)
-	ent.ctb.Position = datastructures.NewMaybe(absTransform.GetPosition())
+	ent.ctb.Position = datastructures.NewMaybe(rl.NewVector2(float32(posX), float32(posY)))
 	ent.ctb.Offset = datastructures.NewMaybe(ent.offset)
 	ent.ctb.Rotation = datastructures.NewMaybe(absTransform.GetRotation())
 	ent.ctb.Zoom = datastructures.NewMaybe(absTransform.GetScale().X)
 
-	// 3. Apply the cameraTransformationBuffer on top of that.
+	// 4. Apply the cameraTransformationBuffer on top of that.
 	ent.ctb.flushToCamera(ent.camera)
 
 }
@@ -128,7 +164,7 @@ func (ent *CameraEntity) OnInputEvent(event *input.InputEvent) bool {
 	// Return false if the event was consumed and should not be propagated
 	// further.
 
-	const moveSpeed = 100
+	const moveSpeed = 10
 	const zoomSpeed = 0.3
 
 	if event.Action == input.ActionMoveLeft {
@@ -222,3 +258,107 @@ func (ctb *cameraTransformationBuffer) flushToCamera(camera *render.Camera) {
 	}
 	ctb.reset()
 }
+
+// ============================================================================
+// Setters and Getters
+// ============================================================================
+
+// SetTarget sets the target/position of the camera.
+func (ent *CameraEntity) SetTarget(position rl.Vector2) {
+	ent.SetPosition(position)
+}
+
+// GetTarget returns the target/position of the camera.
+func (ent *CameraEntity) GetTarget() rl.Vector2 {
+	return ent.GetPosition()
+}
+
+// SetOffset sets the offset of the camera.
+func (ent *CameraEntity) SetOffset(offset rl.Vector2) {
+	ent.offset = offset
+}
+
+// GetOffset returns the offset of the camera.
+func (ent *CameraEntity) GetOffset() rl.Vector2 {
+	return ent.offset
+}
+
+// SetRotation sets the rotation of the camera.
+func (ent *CameraEntity) SetRotation(rotation float32) {
+	ent.SetRotation(rotation)
+}
+
+// GetRotation returns the rotation of the camera.
+func (ent *CameraEntity) GetRotation() float32 {
+	return ent.GetRotation()
+}
+
+// SetZoom sets the zoom of the camera.
+func (ent *CameraEntity) SetZoom(zoom float32) {
+	ent.SetScale(rl.NewVector2(zoom, 1))
+}
+
+// GetZoom returns the zoom of the camera.
+func (ent *CameraEntity) GetZoom() float32 {
+	return ent.GetScale().X
+}
+
+// SetDrawFlags sets the draw flags of the camera.
+func (ent *CameraEntity) SetDrawFlags(drawFlags math.BitFlag) {
+	ent.camera.SetDrawFlags(drawFlags)
+}
+
+// GetDrawFlags returns the draw flags of the camera.
+func (ent *CameraEntity) GetDrawFlags() math.BitFlag {
+	return ent.camera.GetDrawFlags()
+}
+
+// AddShader adds a shader to the camera.
+func (ent *CameraEntity) AddShader(shader *rl.Shader) {
+	ent.camera.AddShader(shader)
+}
+
+// RemoveShader removes a shader from the camera.
+func (ent *CameraEntity) RemoveShader(shader *rl.Shader) {
+	ent.camera.RemoveShader(shader)
+}
+
+// A vertex shader that offsets the position of the vertices by a subpixel
+// amount to smooth out movement when rendering at a low resolution.
+const pixelSmoothingShader = `
+#version 330
+
+// Input vertex attributes
+in vec3 vertexPosition;
+in vec2 vertexTexCoord;
+in vec3 vertexNormal;
+in vec4 vertexColor;
+
+// Input uniform values
+uniform mat4 mvp;
+uniform vec2 subpixelOffset;
+
+// Output vertex attributes (to fragment shader)
+out vec2 fragTexCoord;
+out vec4 fragColor;
+
+void main()
+{
+	// ORIGINAL
+    //// Send vertex attributes to fragment shader
+    //fragTexCoord = vertexTexCoord;
+    //fragColor = vertexColor;
+
+    //// Calculate final vertex position
+    //gl_Position = mvp*vec4(vertexPosition, 1.0);
+
+
+	// SMOOTHED
+	// Send vertex attributes to fragment shader
+	fragTexCoord = vertexTexCoord + vec2(subpixelOffset.x, -subpixelOffset.y);
+	fragColor = vertexColor;
+
+	// Calculate final vertex position
+	gl_Position = mvp*vec4(vertexPosition, 1.0);
+}
+`

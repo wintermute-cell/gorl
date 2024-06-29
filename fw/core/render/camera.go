@@ -22,6 +22,8 @@ type Camera struct {
 	renderTarget *renderTarget
 	drawFlags    math.BitFlag
 	shaders      []*rl.Shader
+	finalShader  *rl.Shader // the final shader to apply to the renderTarget when rendering to the screen.
+	renderMargin int32      // the amount of cutoff on each side when rendering the renderTarget to the screen.
 
 	// a render texture used when applying the shader stack.
 	bounceTexture rl.RenderTexture2D
@@ -114,6 +116,11 @@ func (c *Camera) GetDrawFlags() math.BitFlag {
 	return c.drawFlags
 }
 
+// SetFinalShader sets the final shader of the camera.
+func (c *Camera) SetFinalShader(shader *rl.Shader) {
+	c.finalShader = shader
+}
+
 // AddShader adds a shader to the camera.
 func (c *Camera) AddShader(shader *rl.Shader) {
 	c.shaders = append(c.shaders, shader)
@@ -129,61 +136,7 @@ func (c *Camera) RemoveShader(shader *rl.Shader) {
 	}
 }
 
-//
-//type cameraTransformationBuffer struct {
-//	Position       []rl.Vector2
-//	PositionChange []rl.Vector2
-//	Offset         []rl.Vector2
-//	OffsetChange   []rl.Vector2
-//	Rotation       []float32
-//	RotationChange []float32
-//	Zoom           []float32
-//	ZoomChange     []float32
-//}
-//
-//// Resets all slices in cameraTransformationBuffer to empty without reallocation
-//func (ctb *cameraTransformationBuffer) reset() {
-//	ctb.Position = ctb.Position[:0]
-//	ctb.PositionChange = ctb.PositionChange[:0]
-//	ctb.Offset = ctb.Offset[:0]
-//	ctb.OffsetChange = ctb.OffsetChange[:0]
-//	ctb.Rotation = ctb.Rotation[:0]
-//	ctb.RotationChange = ctb.RotationChange[:0]
-//	ctb.Zoom = ctb.Zoom[:0]
-//	ctb.ZoomChange = ctb.ZoomChange[:0]
-//}
-//
-//var cameraTransformations cameraTransformationBuffer
-//
-//func applyCameraTransformations(camera *rl.Camera2D) {
-//	for _, position := range cameraTransformations.Position {
-//		camera.Target = position
-//	}
-//	for _, positionChange := range cameraTransformations.PositionChange {
-//		camera.Target = rl.Vector2Add(camera.Target, positionChange)
-//	}
-//	for _, offset := range cameraTransformations.Offset {
-//		camera.Offset = offset
-//	}
-//	for _, offsetChange := range cameraTransformations.OffsetChange {
-//		camera.Offset = rl.Vector2Add(camera.Offset, offsetChange)
-//	}
-//	for _, rotation := range cameraTransformations.Rotation {
-//		camera.Rotation = rotation
-//	}
-//	for _, rotationChange := range cameraTransformations.RotationChange {
-//		camera.Rotation += rotationChange
-//	}
-//	for _, zoom := range cameraTransformations.Zoom {
-//		camera.Zoom = zoom
-//	}
-//	for _, zoomChange := range cameraTransformations.ZoomChange {
-//		camera.Zoom += zoomChange
-//	}
-//	cameraTransformations.reset()
-//}
-//
-//// TODO: these transforms have to be applied to the correct camera / render stage
-//func SetCameraPosition(position rl.Vector2) {
-//	cameraTransformations.Position = append(cameraTransformations.Position, position)
-//}
+// SetRenderMargin sets the render margin of the camera.
+func (c *Camera) SetRenderMargin(margin int32) {
+	c.renderMargin = margin
+}

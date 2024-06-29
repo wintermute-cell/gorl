@@ -88,9 +88,17 @@ func Draw(drawables []Drawable) []input.InputReceiver {
 		if idx == 0 { // make sure the final target is cleared once before the first camera draw.
 			rl.ClearBackground(rl.RayWhite)
 		}
+		if camera.finalShader != nil {
+			rl.BeginShaderMode(*camera.finalShader)
+		}
 		rl.DrawTexturePro(
 			camera.renderTarget.renderTexture.Texture,
-			rl.NewRectangle(0, 0, float32(camera.renderTarget.renderTexture.Texture.Width), -float32(camera.renderTarget.renderTexture.Texture.Height)),
+			rl.NewRectangle(
+				float32(camera.renderMargin),
+				float32(camera.renderMargin),
+				float32(camera.renderTarget.renderTexture.Texture.Width-camera.renderMargin*2),
+				-float32(camera.renderTarget.renderTexture.Texture.Height-camera.renderMargin*2),
+			),
 			rl.NewRectangle(
 				camera.renderTarget.DisplayPosition.X,
 				camera.renderTarget.DisplayPosition.Y,
@@ -100,6 +108,9 @@ func Draw(drawables []Drawable) []input.InputReceiver {
 			rl.NewVector2(0, 0),
 			0, rl.White,
 		)
+		if camera.finalShader != nil {
+			rl.EndShaderMode()
+		}
 		rl.EndTextureMode()
 	}
 
