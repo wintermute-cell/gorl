@@ -115,10 +115,10 @@ func (ent *CameraEntity) Update() {
 	var decay float32 = 1.0
 	ent.shakeTrauma = util.Clamp(ent.shakeTrauma-rl.GetFrameTime()*decay, 0, 1)
 	shake := math.Pow(ent.shakeTrauma, 2)
-	const maxShakeAngleRad = 0.1
+	const maxShakeAngleDeg = 5.7
 	const maxShakeOffset = 10
 
-	rotShake := maxShakeAngleRad * shake * math.RandRange(-1, 1)
+	rotShake := maxShakeAngleDeg * shake * math.RandRange(-1, 1)
 	xShake := maxShakeOffset * shake * math.RandRange(-1, 1)
 	yShake := maxShakeOffset * shake * math.RandRange(-1, 1)
 
