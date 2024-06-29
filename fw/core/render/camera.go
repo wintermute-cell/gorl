@@ -37,7 +37,7 @@ func NewCamera(camTarget, camOffset, renderSize, displaySize, displayPosition rl
 		renderTarget:  &renderTarget{displayPosition, displaySize, rl.LoadRenderTexture(int32(renderSize.X), int32(renderSize.Y))},
 		drawFlags:     drawFlags,
 		shaders:       make([]*rl.Shader, 0),
-		bounceTexture: rl.LoadRenderTexture(int32(displaySize.X), int32(displaySize.Y)),
+		bounceTexture: rl.LoadRenderTexture(int32(renderSize.X), int32(renderSize.Y)),
 	}
 	rendererInstance.cameras = append(rendererInstance.cameras, camera)
 	return camera
