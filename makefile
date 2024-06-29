@@ -29,7 +29,7 @@ dev:
 	@make clean && make build && make run || echo "failure!"
 
 clean:
-	rm -r $(BUILD_PATH)/*
+	rm -r $(BUILD_PATH)/* || true
 
 lint:
 	nilaway main.go
