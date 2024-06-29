@@ -30,11 +30,11 @@ type Camera struct {
 // NewCamera creates a new camera with the given target, offset, display size,
 // display position and draw flags. The camera is added to the global renderer
 // instance.
-func NewCamera(camTarget, camOffset, displaySize, displayPosition rl.Vector2, drawFlags math.BitFlag) *Camera {
+func NewCamera(camTarget, camOffset, renderSize, displaySize, displayPosition rl.Vector2, drawFlags math.BitFlag) *Camera {
 	rlCamera := rl.NewCamera2D(camOffset, camTarget, 0, 1)
 	camera := &Camera{
 		rlcamera:      &rlCamera,
-		renderTarget:  &renderTarget{displayPosition, displaySize, rl.LoadRenderTexture(int32(displaySize.X), int32(displaySize.Y))},
+		renderTarget:  &renderTarget{displayPosition, displaySize, rl.LoadRenderTexture(int32(renderSize.X), int32(renderSize.Y))},
 		drawFlags:     drawFlags,
 		shaders:       make([]*rl.Shader, 0),
 		bounceTexture: rl.LoadRenderTexture(int32(displaySize.X), int32(displaySize.Y)),

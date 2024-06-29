@@ -27,7 +27,7 @@ type CameraEntity struct {
 
 func NewCameraEntityEx(
 	camTarget, camOffset,
-	displaySize, displayPosition rl.Vector2,
+	renderSize, displaySize, displayPosition rl.Vector2,
 	drawFlags math.BitFlag,
 ) *CameraEntity {
 	new_ent := &CameraEntity{
@@ -36,6 +36,7 @@ func NewCameraEntityEx(
 		camera: render.NewCamera(
 			camTarget,
 			camOffset,
+			renderSize,
 			displaySize,
 			displayPosition,
 			drawFlags,
@@ -51,6 +52,7 @@ func NewCameraEntity() *CameraEntity {
 		rl.Vector2Zero(),
 		rl.Vector2Zero(),
 		rl.NewVector2(float32(settings.CurrentSettings().RenderWidth), float32(settings.CurrentSettings().RenderHeight)),
+		rl.NewVector2(float32(settings.CurrentSettings().ScreenWidth), float32(settings.CurrentSettings().ScreenHeight)),
 		rl.Vector2Zero(),
 		math.Flag0,
 	)
