@@ -3,6 +3,8 @@ package settings
 import (
 	"encoding/json"
 	"gorl/fw/core/assets"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type GameSettings struct {
