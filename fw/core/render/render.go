@@ -3,6 +3,7 @@ package render
 import (
 	input "gorl/fw/core/input/input_handling"
 	"gorl/fw/core/math"
+	"gorl/fw/core/settings"
 	"slices"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -112,6 +113,15 @@ func Draw(drawables []Drawable) []input.InputReceiver {
 			rl.EndShaderMode()
 		}
 		rl.EndTextureMode()
+	}
+
+	rl.ClearBackground(rl.Blank)
+	if len(rendererInstance.cameras) == 0 {
+		rl.DrawText(
+			"No camera active! Add a camera entity.",
+			10, int32(settings.CurrentSettings().RenderHeight)-30,
+			20,
+			rl.RayWhite)
 	}
 
 	// Draw the final target to the screen.
