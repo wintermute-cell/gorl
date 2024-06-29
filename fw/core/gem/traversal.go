@@ -69,7 +69,8 @@ func Traverse(withFixedUpdate bool) ([]render.Drawable, []input.InputReceiver) {
 			absTransform: math.NewTransform2DFromMatrix3(tMat3),
 		})
 
-		for _, child := range node.children {
+		for i := len(node.children) - 1; i >= 0; i-- {
+			child := node.children[i]
 			nodeStack.Push(child)
 			transformStack.Push( // we push M_child * M_stack
 				child.entity.
