@@ -70,3 +70,17 @@ func LoadSettings(path string) error {
 
 	return nil
 }
+
+// ============================================================================
+// Utilities
+// ============================================================================
+
+// ScreenSizeV returns an rl.Vector2 with ScreenWidth and ScreenHeight
+func (s *GameSettings) ScreenSizeV() rl.Vector2 {
+	return rl.NewVector2(float32(s.ScreenWidth), float32(s.ScreenHeight))
+}
+
+// RenderSizeV returns an rl.Vector2 with RenderWidth and RenderHeight
+func (s *GameSettings) RenderSizeV() rl.Vector2 {
+	return rl.NewVector2(float32(s.RenderWidth), float32(s.RenderHeight))
+}
