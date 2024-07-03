@@ -27,23 +27,38 @@ var Colorscheme = struct {
 	Color15 Hex
 	Color16 Hex
 }{
-	"#9ece6a",
-	"#9ece6a",
-	"#9ece6a",
-	"#a9b1d6",
-	"#a9b1d6",
-	"#7dcfff",
-	"#c0c741",
-	"#647d34",
-	"#e4943a",
-	"#db4b4b",
-	"#d26471",
-	"#70377f",
-	"#7ec4c1",
-	"#34859d",
-	"#17434b",
-	"#24283b",
+	"#9ece6a", // Color01
+	"#9ece6a", // Color02
+	"#9ece6a", // Color03
+	"#a9b1d6", // Color04
+	"#a9b1d6", // Color05
+	"#7dcfff", // Color06
+	"#c0c741", // Color07
+	"#647d34", // Color08
+	"#e4943a", // Color09
+	"#db4b4b", // Color010
+	"#d26471", // Color011
+	"#70377f", // Color012
+	"#414868", // Color013
+	"#34859d", // Color014
+	"#17434b", // Color015
+	"#24283b", // Color016
 }
+
+// #24283b
+// #c0caf5
+// #1d202f
+// #f7768e
+// #9ece6a
+// #e0af68
+// #7aa2f7
+// #bb9af7
+// #7dcfff
+// #a9b1d6
+//
+// #c0caf5
+// #ff9e64
+// #db4b4b
 
 func (h Hex) ToRGBA() color.RGBA {
 	rgba, err := hex2RGBA(h)

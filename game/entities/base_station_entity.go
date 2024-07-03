@@ -100,24 +100,25 @@ func (ent *BaseStationEntity) Update() {
 func (ent *BaseStationEntity) Draw() {
 
 	// Draw the grid map
-	gridX := len(ent.gridMap)
-	gridY := len(ent.gridMap[0])
-	for x := 0; x < gridX; x++ {
-		for y := 0; y < gridY; y++ {
-			if ent.gridMap[x][y] {
-				rl.DrawCircleV(
-					rl.NewVector2(float32(x*ent.gridTileSize), float32(y*ent.gridTileSize)),
-					float32(ent.gridTileSize/2),
-					rl.Green,
-				)
-			}
-		}
-	}
+	//gridX := len(ent.gridMap)
+	//gridY := len(ent.gridMap[0])
+	//for x := 0; x < gridX; x++ {
+	//	for y := 0; y < gridY; y++ {
+	//		if ent.gridMap[x][y] {
+	//			rl.DrawCircleV(
+	//				rl.NewVector2(float32(x*ent.gridTileSize), float32(y*ent.gridTileSize)),
+	//				float32(ent.gridTileSize/2),
+	//				rl.Green,
+	//			)
+	//		}
+	//	}
+	//}
 
 	// Draw the constructed map
 	rl.DrawTexture(ent.constructedMap, 0, 0, rl.White)
 
 	rl.DrawCircleV(ent.GetPosition(), 20, colorscheme.Colorscheme.Color01.ToRGBA())
+	rl.DrawText("Home", int32(ent.GetPosition().X)-23, int32(ent.GetPosition().Y)+30, 20, colorscheme.Colorscheme.Color01.ToRGBA())
 
 }
 

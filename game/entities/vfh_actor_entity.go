@@ -69,7 +69,7 @@ func NewVfhActorEntity(
 		visionRange:   visionRange,
 		selfColor:     colorscheme.Colorscheme.Color01.ToRGBA(),
 		rayColor:      colorscheme.Colorscheme.Color06.ToRGBA(),
-		adjustedColor: colorscheme.Colorscheme.Color07.ToRGBA(),
+		adjustedColor: colorscheme.Colorscheme.Color06.ToRGBA(),
 		collider:      physics.NewCircleCollider(position, 6, physics.BodyTypeDynamic),
 	}
 
@@ -114,6 +114,10 @@ func (ent *VfhActorEntity) Deinit() {
 func (ent *VfhActorEntity) Update() {
 	// Update logic for the entity per frame
 	// ...
+
+	if rl.Vector2Distance(ent.GetPosition(), ent.baseStation.GetPosition()) < 30 {
+		return
+	}
 
 	if ent.isCrashed {
 		return
@@ -179,51 +183,53 @@ func (ent *VfhActorEntity) Update() {
 
 func (ent *VfhActorEntity) Draw() {
 
-	// Draw the rays
-	for _, rayDir := range ent.vfHistogram {
+	if rl.Vector2Distance(ent.GetPosition(), ent.baseStation.GetPosition()) > 30 {
+		// Draw the rays
+		for _, rayDir := range ent.vfHistogram {
+			rl.DrawLineV(
+				ent.GetPosition(),
+				rl.Vector2Add(ent.GetPosition(), rayDir),
+				ent.rayColor,
+			)
+		}
+
+		// Draw the adjusted histogram
+		for _, rayDir := range ent.adjustedVFH {
+			rl.DrawLineV(
+				ent.GetPosition(),
+				rl.Vector2Add(ent.GetPosition(), rayDir),
+				ent.adjustedColor,
+			)
+		}
+
+		// Draw the currently selected direction
 		rl.DrawLineV(
 			ent.GetPosition(),
-			rl.Vector2Add(ent.GetPosition(), rayDir),
-			ent.rayColor,
+			rl.Vector2Add(ent.GetPosition(), ent.optimalDir),
+			colorscheme.Colorscheme.Color10.ToRGBA(),
 		)
-	}
 
-	// Draw the adjusted histogram
-	for _, rayDir := range ent.adjustedVFH {
+		// Draw the direction towards the goal
 		rl.DrawLineV(
 			ent.GetPosition(),
-			rl.Vector2Add(ent.GetPosition(), rayDir),
-			ent.adjustedColor,
+			rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.goalDirection, 50)),
+			colorscheme.Colorscheme.Color01.ToRGBA(),
 		)
-	}
 
-	// Draw the currently selected direction
-	rl.DrawLineV(
-		ent.GetPosition(),
-		rl.Vector2Add(ent.GetPosition(), ent.optimalDir),
-		rl.Red,
-	)
-
-	// Draw the direction towards the goal
-	rl.DrawLineV(
-		ent.GetPosition(),
-		rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(ent.goalDirection, 50)),
-		rl.Green,
-	)
-
-	// Draw the intersection points
-	for _, hit := range ent.rayHits {
-		if hit != (physics.RaycastHit{}) {
-			rl.DrawCircleV(hit.IntersectionPoint, 2, ent.rayColor)
+		// Draw the intersection points
+		for _, hit := range ent.rayHits {
+			if hit != (physics.RaycastHit{}) {
+				rl.DrawCircleV(hit.IntersectionPoint, 2, ent.rayColor)
+			}
 		}
-	}
 
-	// Draw the current path to the goal
-	for idx, pos := range ent.goalPath {
-		if idx <= 0 { // we skip the first line segment
-			continue
+		// Draw the current path to the goal
+		for idx, pos := range ent.goalPath {
+			if idx <= 0 { // we skip the first line segment
+				continue
+			}
+			rl.DrawLineV(ent.goalPath[idx-1], pos, colorscheme.Colorscheme.Color13.ToRGBA())
 		}
-		rl.DrawLineV(ent.goalPath[idx-1], pos, rl.Green)
 	}
 
 	// Drawing the actor itself
@@ -338,9 +344,9 @@ func (ent *VfhActorEntity) EnlargementFunction(vfh []rl.Vector2, robotRadius int
 		gammas = append(gammas, float32(gammaRad))
 	}
 
-	for _, obs := range obstaclePoints {
-		rl.DrawCircleV(obs, float32(robotRadius+int32(clearance)), rl.Red)
-	}
+	//for _, obs := range obstaclePoints {
+	//	rl.DrawCircleV(obs, float32(robotRadius+int32(clearance)), rl.Red)
+	//}
 
 	// 3. Iterate over vfh and set vfh[i]=0 the angle between vfh[i] and any
 	// vector pointing to an obstacle point is \leq than the gamma of that
