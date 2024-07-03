@@ -343,8 +343,6 @@ func (ent *VfhActorEntity) VFHGoalOrientedCostFunction(vfh []rl.Vector2) rl.Vect
 
 		goalAlignmentLeft := delta(goalDirection, vfh[leftIdx])
 		goalAlignmentRight := delta(goalDirection, vfh[rightIdx])
-		logging.Debug("Goal alignment left: %v", goalAlignmentLeft)
-		logging.Debug("Goal alignment right: %v", goalAlignmentRight)
 
 		left := vfh[leftIdx]
 		leftLen := rl.Vector2Length(left)
