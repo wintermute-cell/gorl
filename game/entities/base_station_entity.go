@@ -117,7 +117,8 @@ func (ent *BaseStationEntity) Draw() {
 	// Draw the constructed map
 	rl.DrawTexture(ent.constructedMap, 0, 0, rl.White)
 
-	rl.DrawCircleV(ent.GetPosition(), 10, rl.Green)
+	rl.DrawCircleV(ent.GetPosition(), 20, colorscheme.Colorscheme.Color01.ToRGBA())
+
 }
 
 func (ent *BaseStationEntity) OnInputEvent(event *input.InputEvent) bool {
