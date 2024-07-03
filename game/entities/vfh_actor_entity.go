@@ -54,14 +54,15 @@ func NewVfhActorEntity(position rl.Vector2, rayAmount int32, visionAngle, vision
 		rayAmount = rayAmount + 1
 	}
 	new_ent := &VfhActorEntity{
-		sprite:        rl.LoadTexture("robot_small.png"),
-		Entity:        entities.NewEntity("VfhActorEntity", position, 0, rl.Vector2One()),
-		forward:       rl.NewVector2(1, 0),
-		visionRange:   visionRange,
-		selfColor:     colorscheme.Colorscheme.Color01.ToRGBA(),
-		rayColor:      colorscheme.Colorscheme.Color06.ToRGBA(),
-		adjustedColor: colorscheme.Colorscheme.Color07.ToRGBA(),
-		collider:      physics.NewCircleCollider(position, 6, physics.BodyTypeDynamic),
+		sprite:         rl.LoadTexture("robot_small.png"),
+		Entity:         entities.NewEntity("VfhActorEntity", position, 0, rl.Vector2One()),
+		forward:        rl.NewVector2(1, 0),
+		visionRange:    visionRange,
+		selfColor:      colorscheme.Colorscheme.Color01.ToRGBA(),
+		rayColor:       colorscheme.Colorscheme.Color06.ToRGBA(),
+		adjustedColor:  colorscheme.Colorscheme.Color06.ToRGBA(),
+		collider:       physics.NewCircleCollider(position, 6, physics.BodyTypeDynamic),
+		simpleCostFunc: true,
 	}
 
 	new_ent.collider.SetCategory(physics.CollisionCategoryPlayer)
@@ -116,6 +117,10 @@ func (ent *VfhActorEntity) Deinit() {
 func (ent *VfhActorEntity) Update() {
 	// Update logic for the entity per frame
 	// ...
+
+	if rl.Vector2Distance(ent.GetPosition(), ent.goal) < 30 {
+		return
+	}
 
 	if ent.isCrashed {
 		return
@@ -182,48 +187,50 @@ func (ent *VfhActorEntity) Draw() {
 
 	// Draw the constructed map
 	rl.DrawTexture(ent.constructedMap, 0, 0, rl.White)
+	if rl.Vector2Distance(ent.GetPosition(), ent.goal) > 30 {
 
-	// Draw the rays
-	for _, rayDir := range ent.vfHistogram {
+		// Draw the rays
+		for _, rayDir := range ent.vfHistogram {
+			rl.DrawLineV(
+				ent.GetPosition(),
+				rl.Vector2Add(ent.GetPosition(), rayDir),
+				ent.rayColor,
+			)
+		}
+
+		// Draw the adjusted histogram
+		for _, rayDir := range ent.adjustedVFH {
+			rl.DrawLineV(
+				ent.GetPosition(),
+				rl.Vector2Add(ent.GetPosition(), rayDir),
+				ent.adjustedColor,
+			)
+		}
+
+		// Draw the currently selected direction
 		rl.DrawLineV(
 			ent.GetPosition(),
-			rl.Vector2Add(ent.GetPosition(), rayDir),
-			ent.rayColor,
+			rl.Vector2Add(ent.GetPosition(), ent.optimalDir),
+			colorscheme.Colorscheme.Color10.ToRGBA(),
 		)
-	}
 
-	// Draw the adjusted histogram
-	for _, rayDir := range ent.adjustedVFH {
-		rl.DrawLineV(
-			ent.GetPosition(),
-			rl.Vector2Add(ent.GetPosition(), rayDir),
-			ent.adjustedColor,
-		)
-	}
+		// Draw the direction towards the goal
+		if ent.isGoalDirected {
+			goalDirection := rl.Vector2Normalize(
+				rl.Vector2Subtract(ent.goal, ent.GetPosition()),
+			)
+			rl.DrawLineV(
+				ent.GetPosition(),
+				rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(goalDirection, 50)),
+				rl.Green,
+			)
+		}
 
-	// Draw the currently selected direction
-	rl.DrawLineV(
-		ent.GetPosition(),
-		rl.Vector2Add(ent.GetPosition(), ent.optimalDir),
-		rl.Red,
-	)
-
-	// Draw the direction towards the goal
-	if ent.isGoalDirected {
-		goalDirection := rl.Vector2Normalize(
-			rl.Vector2Subtract(ent.goal, ent.GetPosition()),
-		)
-		rl.DrawLineV(
-			ent.GetPosition(),
-			rl.Vector2Add(ent.GetPosition(), rl.Vector2Scale(goalDirection, 50)),
-			rl.Green,
-		)
-	}
-
-	// Draw the intersection points
-	for _, hit := range ent.rayHits {
-		if hit != (physics.RaycastHit{}) {
-			rl.DrawCircleV(hit.IntersectionPoint, 2, ent.rayColor)
+		// Draw the intersection points
+		for _, hit := range ent.rayHits {
+			if hit != (physics.RaycastHit{}) {
+				rl.DrawCircleV(hit.IntersectionPoint, 2, ent.rayColor)
+			}
 		}
 	}
 

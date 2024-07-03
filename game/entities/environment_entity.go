@@ -4,6 +4,7 @@ import (
 	"gorl/fw/core/entities"
 	input "gorl/fw/core/input/input_event"
 	"gorl/fw/physics"
+	"gorl/game/code/colorscheme"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -21,16 +22,19 @@ type EnvironmentEntity struct {
 	cols []*physics.Collider // a list of chain shape colliders
 
 	groundTexture rl.Texture2D
+
+	homePoint rl.Vector2
 }
 
 // NewEnvironmentEntity creates a new instance of the EnvironmentEntity.
-func NewEnvironmentEntity() *EnvironmentEntity {
+func NewEnvironmentEntity(homePoint rl.Vector2) *EnvironmentEntity {
 	// NOTE: you can modify the constructor to take any parameters you need to
 	// initialize the entity.
 	new_ent := &EnvironmentEntity{
 		Entity:        entities.NewEntity("EnvironmentEntity", rl.Vector2Zero(), 0, rl.Vector2One()),
 		cols:          make([]*physics.Collider, 0),
 		groundTexture: rl.LoadTexture("map_thresh_whitewalls_antialiased.png"),
+		homePoint:     homePoint,
 	}
 
 	// a chain collider surrounding the 1920x1080 map
@@ -85,16 +89,19 @@ func (ent *EnvironmentEntity) Update() {
 
 func (ent *EnvironmentEntity) Draw() {
 	//rl.DrawTexture(ent.groundTexture, 0, 0, rl.White)
-	for _, col := range ent.cols {
-		verts := col.GetVertices()
-		for idx, v := range verts {
-			if idx == 0 {
-				rl.DrawLineEx(v, verts[len(verts)-1], 2, rl.Green)
-			} else {
-				rl.DrawLineEx(v, verts[idx-1], 2, rl.Green)
-			}
-		}
-	}
+	//	for _, col := range ent.cols {
+	//		verts := col.GetVertices()
+	//		for idx, v := range verts {
+	//			if idx == 0 {
+	//				rl.DrawLineEx(v, verts[len(verts)-1], 2, rl.Green)
+	//			} else {
+	//				rl.DrawLineEx(v, verts[idx-1], 2, rl.Green)
+	//			}
+	//		}
+	//	}
+
+	rl.DrawCircleV(ent.homePoint, 20, colorscheme.Colorscheme.Color01.ToRGBA())
+	rl.DrawText("Home", int32(ent.homePoint.X)-23, int32(ent.homePoint.Y)+30, 20, colorscheme.Colorscheme.Color01.ToRGBA())
 }
 
 func (ent *EnvironmentEntity) OnInputEvent(event *input.InputEvent) bool {
