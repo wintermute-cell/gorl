@@ -11,6 +11,16 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+// ============================================================================
+// The animation package implements a simple keyframe based animation system
+// for animating variables over time.
+// ----------------------------------------------------------------------------
+//
+//		An animation has to be created using CreateAnimation(duration), and
+//		updated every frame using myAnimation.Update().
+//
+// ============================================================================
+
 type number interface {
 	~int32 | ~float32
 }
