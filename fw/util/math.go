@@ -60,6 +60,16 @@ func Round[T number](x T) T {
 	return v
 }
 
+// Floor returns the largest integer value less than or equal to x.
+func Floor[T signed_number](x T) T {
+	return T(math.Floor(float64(x)))
+}
+
+// Ceil returns the smallest integer value greater than or equal to x.
+func Ceil[T signed_number](x T) T {
+	return T(math.Ceil(float64(x)))
+}
+
 // Vector2NormalizeSafe returns the normalized vector. If the input vector is
 // zero, it returns a zero vector instead of (NaN, NaN).
 //
