@@ -275,24 +275,27 @@ func (ent *VfhActorEntity) OnInputEvent(event *input.InputEvent) bool {
 // Might return a zero vector if no direction is suitable.
 func (ent *VfhActorEntity) VFHGoalOrientedCostFunction(vfh []rl.Vector2, goalDirection rl.Vector2) rl.Vector2 {
 
-	vfh = ent.EnlargementFunction(vfh, 10)
+	// Enlarge each environment collision by a clearance distance,
+	// pruning away any vectors that are within the clearance.
+	const robotSize int32 = 10
+	vfh = ent.EnlargementFunction(vfh, robotSize)
 	ent.adjustedVFH = vfh
 
+	// Initialize an empty selection.
 	mid := len(vfh) / 2
 	selection := rl.Vector2Zero()
 	selectionCost := float32(math.MaxFloat32)
 
-	// delta returns the absolute angle between two vectors
-	//delta := func(v1, v2 rl.Vector2) float32 {
-	//	angleRad := rl.Vector2Angle(v1, v2)
-	//	absRad := util.Abs(angleRad)
-	//	return absRad
-	//}
+	// The delta function from the VFH+ paper.
 	delta := func(v1, v2 rl.Vector2) float32 {
 		v := util.Vector2AngleSmallest(v1, v2)
 		return util.Abs(v)
 	}
 
+	// Iterate over the histogram, from the most outward vectors to the most
+	// inward.
+	// This way we prioritize the vectors that maintain the robot's current
+	// direction.
 	for i := mid; i >= 0; i-- {
 		leftIdx := mid - i
 		rightIdx := mid + i

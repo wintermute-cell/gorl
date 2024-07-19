@@ -21,6 +21,9 @@ func manhattanHeuristic(a, b math.Vector2Int) float64 {
 func AstarPath(start, goal math.Vector2Int, grid [][]bool) []math.Vector2Int {
 
 	// check that both start and goal are within the grid and are not obstacles
+	if !pointIsValid(start, grid) || !pointIsValid(goal, grid) {
+		return nil
+	}
 
 	frontier := datastructures.NewMinPriorityQueue[math.Vector2Int, float64]()
 	frontier.Push(start, 0)
