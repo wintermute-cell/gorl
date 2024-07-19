@@ -19,6 +19,13 @@ func RandRange(min, max float32) float32 {
 	return min + rand.Float32()*(max-min)
 }
 
+// RandRangeInt returns a random int between min and max.
+// The returned value is in the range [min, max).
+// e.g. min is inclusive, max is exclusive.
+func RandRangeInt(min, max int) int {
+	return min + rand.Intn(max-min)
+}
+
 // ShortestLerp returns the shortest linear interpolation between two numbers.
 func ShortestLerp(current, target, factor float32) float32 {
 	// Calculate the difference
