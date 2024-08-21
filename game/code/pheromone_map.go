@@ -38,14 +38,31 @@ func NewPheromoneMap(size, resolution math.Vector2Int) *PheromoneMap {
 	obstacleData := make([]color.RGBA, totalCells)
 
 	// Initialize obstacles as an example
-	areaWidth, areaHeight := 100, 750
-	startX, startY := 800, 0
-	for x := startX; x < startX+areaWidth; x++ {
-		for y := startY; y < startY+areaHeight; y++ {
-			scaledX := x * size.X / resolution.X
-			scaledY := y * size.Y / resolution.Y
-			if scaledX >= 0 && scaledX < size.X && scaledY >= 0 && scaledY < size.Y {
-				obstacleData[scaledY*size.X+scaledX] = color.RGBA{R: 255, G: 255, B: 255, A: 255}
+	//areaWidth, areaHeight := 100, 750
+	//startX, startY := 800, 0
+	//for x := startX; x < startX+areaWidth; x++ {
+	//	for y := startY; y < startY+areaHeight; y++ {
+	//		scaledX := x * size.X / resolution.X
+	//		scaledY := y * size.Y / resolution.Y
+	//		if scaledX >= 0 && scaledX < size.X && scaledY >= 0 && scaledY < size.Y {
+	//			obstacleData[scaledY*size.X+scaledX] = color.RGBA{R: 255, G: 255, B: 255, A: 255}
+	//		}
+	//	}
+	//}
+
+	obstacleTexture := rl.LoadTexture("obstaclemap.png")
+	asImg := rl.LoadImageFromTexture(obstacleTexture)
+	// ensure the obstacle texture is the same size as the map
+	if asImg.Width != int32(size.X) || asImg.Height != int32(size.Y) {
+		logging.Fatal("Obstacle texture size does not match map size, should be %dx%d", size.X, size.Y)
+	}
+	// Iterate over the obstacle texture and set the obstacle data
+	for y := 0; y < size.Y; y++ {
+		for x := 0; x < size.X; x++ {
+			index := y*size.X + x
+			col := rl.GetImageColor(*asImg, int32(x), int32(y))
+			if col.R > 0 {
+				obstacleData[index] = color.RGBA{R: 40, G: 40, B: 40, A: 255}
 			}
 		}
 	}

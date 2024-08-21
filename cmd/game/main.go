@@ -122,13 +122,24 @@ func main() {
 	shouldExit := false
 
 	// frame time measurement stuff
-	frameStart := time.Now()
-	var frameTime time.Duration = 0
+	//	frameStart := time.Now()
+	//	var frameTime time.Duration = 0
 
 	debugTex := rl.LoadRenderTexture(int32(settings.CurrentSettings().RenderWidth), int32(settings.CurrentSettings().RenderHeight))
 
+	startTimer := 0.0
+
 	for !shouldExit {
-		frameStart = time.Now()
+		//frameStart = time.Now()
+
+		if startTimer < 5 {
+			startTimer += float64(rl.GetFrameTime())
+			rl.BeginDrawing()
+			rl.EndDrawing()
+			continue
+		} else {
+			startTimer = 6
+		}
 
 		rl.BeginTextureMode(debugTex)
 		rl.ClearBackground(rl.Blank)
@@ -152,7 +163,7 @@ func main() {
 		input.HandleInputEvents(inputReceivers)
 
 		// Draw Debug Info
-		DrawDebugInfo(frameTime)
+		//DrawDebugInfo(frameTime)
 		rl.DrawTexturePro(
 			debugTex.Texture,
 			rl.NewRectangle(0, 0, float32(debugTex.Texture.Width), -float32(debugTex.Texture.Height)),
@@ -164,7 +175,7 @@ func main() {
 		rl.EndDrawing()
 
 		//audio.Update()
-		frameTime = time.Since(frameStart) // calculate after rl.EndDrawing() to include rendering time
+		//frameTime = time.Since(frameStart) // calculate after rl.EndDrawing() to include rendering time
 
 		appState, ok := store.Get[*store.AppState]()
 		shouldExit = rl.WindowShouldClose() || (!ok || appState.ShouldQuit)

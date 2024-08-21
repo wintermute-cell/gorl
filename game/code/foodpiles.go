@@ -23,7 +23,7 @@ func NewFoodPiles() *FoodPiles {
 		FoodPileRadius:  20,
 		FoodPilePoints: []rl.Vector2{
 			//rl.NewVector2(730, 840),
-			rl.NewVector2(1560, 440),
+			rl.NewVector2(1920/2, 100),
 		},
 	}
 

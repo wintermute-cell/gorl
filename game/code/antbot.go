@@ -138,7 +138,7 @@ func (bot *Antbot) Move() {
 
 		trackStrength := wanderStrength * bot.strictness
 		rot, lin = bot.steerTrackPheromone(PheromoneReturning)
-		bot.rotVelocity += rot * trackStrength
+		bot.rotVelocity += rot * trackStrength * 1.2
 		bot.linVelocity += lin
 
 	case BotModeReturning:
@@ -157,7 +157,7 @@ func (bot *Antbot) Move() {
 
 		trackStrength := wanderStrength * bot.strictness
 		rot, lin = bot.steerTrackPheromone(PheromoneLeaving)
-		bot.rotVelocity += rot * trackStrength
+		bot.rotVelocity += rot * trackStrength * 1.2
 		bot.linVelocity += lin
 
 		if rl.CheckCollisionCircles(bot.Transform.GetPosition(), bot.botRadius, bot.homeBasePoint, bot.homeBaseRadius) {

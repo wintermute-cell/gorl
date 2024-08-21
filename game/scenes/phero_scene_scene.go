@@ -32,7 +32,7 @@ func (scn *PheroSceneScene) Init() {
 	foodpiles := entities.NewFoodpilesEntity()
 	gem.Append(scn.GetRoot(), foodpiles)
 
-	actor := entities.NewAntbotsEntity(1000, rl.NewVector2(300, 300), 40, cam, foodpiles)
+	actor := entities.NewAntbotsEntity(1000, rl.NewVector2(1920/2, 1080/2), 40, cam, foodpiles)
 	gem.Append(scn.GetRoot(), actor)
 }
 
