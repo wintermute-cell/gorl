@@ -124,14 +124,23 @@ func main() {
 	frameStart := time.Now()
 	var frameTime time.Duration = 0
 
+	// a texture to draw to outside of the rendering stage, for debugging
+	debugTexture := rl.LoadRenderTexture(
+		int32(settings.CurrentSettings().ScreenWidth),
+		int32(settings.CurrentSettings().ScreenHeight),
+	)
+
 	// ==============================
 	// MAIN LOOP
 	// ==============================
 	for !shouldExit {
 		frameStart = time.Now()
 
+		rl.BeginTextureMode(debugTexture)
+		rl.ClearBackground(rl.Blank)
 		shouldFixedUpdate := physics.Update()
 		drawables, inputReceivers := gem.Traverse(shouldFixedUpdate)
+		rl.EndTextureMode()
 
 		rl.BeginDrawing()
 
@@ -144,6 +153,12 @@ func main() {
 
 		// Draw Debug Info
 		DrawDebugInfo(frameTime)
+		rl.DrawTexturePro(
+			debugTexture.Texture,
+			rl.NewRectangle(0, 0, float32(debugTexture.Texture.Width), -float32(debugTexture.Texture.Height)),
+			rl.NewRectangle(0, 0, float32(rl.GetScreenWidth()), float32(rl.GetScreenHeight())),
+			rl.Vector2Zero(), 0, rl.White,
+		)
 
 		rl.EndDrawing()
 

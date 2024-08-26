@@ -140,3 +140,23 @@ func (c *Camera) RemoveShader(shader *rl.Shader) {
 func (c *Camera) SetRenderMargin(margin int32) {
 	c.renderMargin = margin
 }
+
+// GetViewRect returns the view rectangle of the camera, based on
+// position/target, offset, render size and zoom.
+// Rotation is not taken into account.
+func (c *Camera) GetViewRect() rl.Rectangle {
+	// Get the texture width and height from the render target
+	rTex := c.renderTarget.renderTexture.Texture
+	renderWidth := float32(rTex.Width)
+	renderHeight := float32(rTex.Height)
+
+	// Calculate the view width and height based on the zoom
+	viewWidth := renderWidth / c.rlcamera.Zoom
+	viewHeight := renderHeight / c.rlcamera.Zoom
+
+	// Calculate the top-left corner of the view rectangle
+	view := rl.GetScreenToWorld2D(rl.NewVector2(0, 0), *c.rlcamera)
+
+	// Construct and return the view rectangle
+	return rl.NewRectangle(view.X, view.Y, viewWidth, viewHeight)
+}

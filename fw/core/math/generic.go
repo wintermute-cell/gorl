@@ -66,3 +66,8 @@ func Pow[T number](x, y T) T {
 func Lerp[T number](a, b T, factor float32) T {
 	return T(float32(a)*(1.0-factor) + (float32(b) * factor))
 }
+
+// Sqrt returns the square root of x.
+func Sqrt[T number](x T) T {
+	return T(math.Sqrt(float64(x)))
+}
